@@ -9,3 +9,4 @@ node_modules/
 /plan
 /.vscode
 CLAUDE.md
+/.auth
