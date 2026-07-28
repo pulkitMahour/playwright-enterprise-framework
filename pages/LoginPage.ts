@@ -34,4 +34,8 @@ export class LoginPage {
         await this.password.fill(password)
         await this.loginButton.click();
     }
+
+    async waitForLoggedIn() {
+        await this.navbar_name.waitFor({ state: 'visible' });
+    }
 }

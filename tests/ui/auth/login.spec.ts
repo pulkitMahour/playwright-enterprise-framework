@@ -12,7 +12,6 @@ test.describe('Login Page', () => {
 
     test('Login test with invalid credentials', async ({ page }) => {
         const loginPage = new LoginPage(page);
-
         await loginPage.gotoLoginPage();
         await loginPage.login("invalid@demo.com", "invalid123")
 
@@ -20,7 +19,7 @@ test.describe('Login Page', () => {
         await expect(page).toHaveURL('/login');
     });
 
-    customLogin('Logout', async ({page, loginFixture}) => {
+    customLogin('Logout', async ({ page, loginFixture }) => {
         await expect(page).toHaveURL('/');
 
         await loginFixture.logoutButton.click();
@@ -28,4 +27,45 @@ test.describe('Login Page', () => {
         await expect(loginFixture.loginStatusButton).toBeVisible();
         await expect(loginFixture.navbar_name).toBeHidden();
     })
+
+    test('not an email', async ({ page }) => {
+        const loginPage = new LoginPage(page);
+        await loginPage.gotoLoginPage();
+        await loginPage.login('not-an-email', 'user123');
+
+        await expect(loginPage.email).toHaveJSProperty('validity.typeMismatch', true);
+        await expect(page).toHaveURL('/login');
+    });
+
+    test('empty email', async ({ page }) => {
+        const loginPage = new LoginPage(page);
+        await loginPage.gotoLoginPage();
+        await loginPage.login('', 'user123');
+
+        await expect(loginPage.email).toHaveJSProperty('validity.valueMissing', true);
+        await expect(page).toHaveURL('/login');
+    });
+
+    test('empty password', async ({ page }) => {
+        const loginPage = new LoginPage(page);
+        await loginPage.gotoLoginPage();
+        await loginPage.login('user@demo.com', '');
+
+        await expect(loginPage.password).toHaveJSProperty('validity.valueMissing', true);
+        await expect(page).toHaveURL('/login');
+    });
+
+    test('admin login', async ({ page }) => {
+        const loginPage = new LoginPage(page);
+        await loginPage.gotoLoginPage();
+
+        await loginPage.login('admin@demo.com', 'admin123');
+        await expect(loginPage.loginSuccess).toBeVisible();
+        await expect(loginPage.navbar_name).toHaveText('Admin User')
+    });
+
+    test('go to checkout without login', async ({ page }) => {
+        await page.goto('/checkout');
+        await expect(page).toHaveURL('/login');
+    });
 });
