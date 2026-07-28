@@ -1,8 +1,8 @@
 import { Page, Locator } from '@playwright/test';
+import { BasePage } from './BasePage';
 
 
-export class HomePage {
-    readonly page: Page;
+export class HomePage extends BasePage {
     readonly search: Locator;
     readonly search_submit: Locator;
     readonly category_filter: Locator;
@@ -13,7 +13,7 @@ export class HomePage {
     readonly product_card: Locator;
 
     constructor(page: Page) {
-        this.page = page;
+        super(page);
         this.search = page.getByLabel('Search products');
         this.search_submit = page.getByTestId('search-submit')
         this.category_filter = page.getByTestId('category-filter');
@@ -22,5 +22,9 @@ export class HomePage {
         this.page_prev = page.getByTestId('page-prev');
         this.product_grid = page.getByTestId('product-grid');
         this.product_card = page.getByTestId('product-card');
+    }
+
+    async gotoHomePage() {
+        await this.goto('/')
     }
 };

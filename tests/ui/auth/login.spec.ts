@@ -8,6 +8,7 @@ test.describe('Login Page', () => {
         await expect(page).toHaveURL('/');
         await expect(loginFixture.loginSuccess).toBeVisible();
         await expect(loginFixture.navbar_name).toHaveText('John Doe')
+        await expect(loginFixture.nav_admin).toBeHidden();
     });
 
     test('Login test with invalid credentials', async ({ page }) => {
@@ -62,10 +63,16 @@ test.describe('Login Page', () => {
         await loginPage.login('admin@demo.com', 'admin123');
         await expect(loginPage.loginSuccess).toBeVisible();
         await expect(loginPage.navbar_name).toHaveText('Admin User')
+        await expect(loginPage.nav_admin).toBeVisible();
     });
 
     test('go to checkout without login', async ({ page }) => {
+        const loginPage = new LoginPage(page);
+
         await page.goto('/checkout');
         await expect(page).toHaveURL('/login');
+
+        await loginPage.login('user@demo.com', 'user123');
+        await expect(page).toHaveURL('/checkout');
     });
 });
