@@ -43,9 +43,7 @@ test.describe('Product Page', () => {
     })
 
     test('Add to cart from card grid', async () => {
-        const product = productPage.product_card.filter({ hasText: "Raptor Gaming Mouse" })
-
-        await product.getByRole('button', { name: 'Add to cart' }).click()
+        productPage.addProduct();
         await expect(productPage.add_to_cart_success).toBeVisible();
         await expect(productPage.nav_cart_count).toHaveText('1')
     })

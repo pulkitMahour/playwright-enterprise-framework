@@ -8,6 +8,7 @@ export class BasePage {
     readonly add_to_cart_success: Locator;
     readonly nav_brand: Locator;
     readonly product_card: Locator;
+    readonly nav_cart: Locator;
     readonly nav_cart_count: Locator;
 
     constructor(page: Page) {
@@ -18,6 +19,7 @@ export class BasePage {
         this.add_to_cart_success = page.getByText('Added');
         this.nav_brand = page.getByTestId('nav-brand');
         this.product_card = page.getByTestId('product-card');
+        this.nav_cart = page.getByTestId('nav-cart')
         this.nav_cart_count = page.getByTestId('nav-cart-count');
     }
 
@@ -27,5 +29,10 @@ export class BasePage {
 
     async goto(path: string) {
         await this.page.goto(path);
+    }
+
+    async addProduct(){
+        const product = this.product_card.filter({ hasText: "Raptor Gaming Mouse" })
+        await product.getByRole('button', { name: 'Add to cart' }).click()
     }
 }
