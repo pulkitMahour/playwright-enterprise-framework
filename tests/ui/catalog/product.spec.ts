@@ -11,9 +11,10 @@ test.describe('Product Page', () => {
 
     test('Product details are displayed correctly', async ({ page }) => {
         const product = productPage.product_card_title.filter({ hasText: "Vortex Mechanical Keyboard" })
+        const href = await product.getAttribute('href');
 
         await product.click();
-        await expect(page).toHaveURL('/product/6a69b10891e2b622aee507dc');
+        await expect(page).toHaveURL(href!);
         await expect(productPage.product_detail).toBeVisible();
         await expect(productPage.product_title).toHaveText('Vortex Mechanical Keyboard');
         await expect(productPage.product_price).toHaveText('$119.99');
