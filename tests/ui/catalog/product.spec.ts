@@ -10,6 +10,8 @@ test.describe('Product Page', () => {
     });
 
     test('Product details are displayed correctly', async ({ page }) => {
+        productPage.search.fill('Vortex Mechanical Keyboard');
+        productPage.search_submit.click();
         const product = productPage.product_card_title.filter({ hasText: "Vortex Mechanical Keyboard" })
         const href = await product.getAttribute('href');
 
@@ -25,6 +27,8 @@ test.describe('Product Page', () => {
     });
 
     test('Add quantity and cart increment', async () => {
+        productPage.search.fill('Raptor Gaming Mouse')
+        productPage.search_submit.click()
         const product = productPage.product_card_title.filter({ hasText: "Raptor Gaming Mouse" })
 
         await product.click()
@@ -35,6 +39,8 @@ test.describe('Product Page', () => {
     })
 
     test('Out of stock Product', async () => {
+        productPage.search.fill('SoundWave Bluetooth Speaker')
+        productPage.search_submit.click()
         const product = productPage.product_card_title.filter({ hasText: "SoundWave Bluetooth Speaker" })
 
         await product.click()
@@ -43,7 +49,7 @@ test.describe('Product Page', () => {
     })
 
     test('Add to cart from card grid', async () => {
-        productPage.addProduct();
+        productPage.addToCart();
         await expect(productPage.add_to_cart_success).toBeVisible();
         await expect(productPage.nav_cart_count).toHaveText('1')
     })
