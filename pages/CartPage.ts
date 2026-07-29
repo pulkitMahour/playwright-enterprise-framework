@@ -9,7 +9,6 @@ export class CartPage extends BasePage {
     readonly cart_item_remove: Locator;
     readonly cart_clear: Locator;
     readonly cart_subtotal: Locator;
-    readonly cart_checkout: Locator;
     readonly cart_empty: Locator;
     readonly cart_item_subtotal: Locator;
 
@@ -20,7 +19,6 @@ export class CartPage extends BasePage {
         this.cart_item_remove = page.getByTestId('cart-item-remove');
         this.cart_clear = page.getByTestId('cart-clear');
         this.cart_subtotal = page.getByTestId('cart-subtotal');
-        this.cart_checkout = page.getByTestId('cart-checkout');
         this.cart_empty = page.getByTestId('cart-empty');
         this.cart_item_subtotal = page.getByTestId('cart-item-subtotal');
         this.cart_item_name = page.getByTestId('cart-item-name');

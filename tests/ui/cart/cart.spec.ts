@@ -10,14 +10,14 @@ test.describe('Cart Page', () => {
     })
 
     test('Add product', async () => {
-        await cartPage.addToCart();
+        await cartPage.addToCart('Raptor Gaming Mouse');
         await expect(cartPage.cart_item).toBeVisible();
         await expect(cartPage.cart_item_name).toHaveText('Raptor Gaming Mouse');
         await expect(cartPage.cart_item_price).toHaveText('$44.99');
     })
 
     test('Update product', async () => {
-        await cartPage.addToCart();
+        await cartPage.addToCart('Raptor Gaming Mouse');
         await expect(cartPage.cart_item).toBeVisible();
         await cartPage.cart_item_qty.fill('5');
         await expect(cartPage.cart_item_subtotal).toHaveText('$224.95');
@@ -26,7 +26,7 @@ test.describe('Cart Page', () => {
     })
 
     test('Cart Item Remove', async () => {
-        await cartPage.addToCart();
+        await cartPage.addToCart('Raptor Gaming Mouse');
         await expect(cartPage.cart_item).toBeVisible();
         await cartPage.cart_item_remove.click();
         await expect(cartPage.cart_item).toBeHidden();
@@ -35,7 +35,7 @@ test.describe('Cart Page', () => {
     })
 
     test('Clear Cart', async () => {
-        await cartPage.addToCart();
+        await cartPage.addToCart('Raptor Gaming Mouse');
         await expect(cartPage.cart_item).toBeVisible();
         await cartPage.cart_clear.click();
         await expect(cartPage.cart_item).toBeHidden();
@@ -44,7 +44,7 @@ test.describe('Cart Page', () => {
     })
 
     test('Cart persists across reload', async ({ page }) => {
-        await cartPage.addToCart();
+        await cartPage.addToCart('Raptor Gaming Mouse');
         await expect(cartPage.nav_cart_count).toBeVisible();
         await page.reload();
         await expect(cartPage.nav_cart_count).toBeVisible();
