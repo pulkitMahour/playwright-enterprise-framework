@@ -19,7 +19,7 @@ function resolveRole(): TestRole {
 }
 
 /** Credentials come from `.env` as <ROLE>_EMAIL / <ROLE>_PASSWORD — never hardcoded here. */
-function credentialsFor(role: TestRole) {
+export function credentialsFor(role: TestRole) {
     const prefix = role.toUpperCase();
     const email = process.env[`${prefix}_EMAIL`];
     const password = process.env[`${prefix}_PASSWORD`];

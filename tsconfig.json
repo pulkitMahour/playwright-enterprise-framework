@@ -1,9 +1,15 @@
 {
     "compilerOptions": {
-        "moduleResolution": "node",
+        "target": "ES2022",
+        "lib": ["ES2022", "DOM"],
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "types": ["node"],
         "strict": true,
-        "ignoreDeprecations": "6.0",
         "esModuleInterop": true,
-        "types": ["node"]
-    }
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "noEmit": true
+    },
+    "include": ["fixtures/**/*.ts", "pages/**/*.ts", "tests/**/*.ts", "playwright.config.ts"]
 }
