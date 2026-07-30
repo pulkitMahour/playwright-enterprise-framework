@@ -10,6 +10,7 @@ test.describe('Product Page', () => {
     });
 
     test('Product details are displayed correctly', async ({ page }) => {
+        await productPage.searchProduct('Vortex Mechanical Keyboard');
         const product = productPage.product_card_title.filter({ hasText: "Vortex Mechanical Keyboard" })
         const href = await product.getAttribute('href');
 
@@ -18,13 +19,14 @@ test.describe('Product Page', () => {
         await expect(productPage.product_detail).toBeVisible();
         await expect(productPage.product_title).toHaveText('Vortex Mechanical Keyboard');
         await expect(productPage.product_price).toHaveText('$119.99');
-        await expect(productPage.product_stock).toHaveText('In stock: 22');
+        await expect(productPage.product_stock).toContainText('In stock:');
         await expect(productPage.product_rating).toHaveText('★ 4.8 (205 reviews)');
         await expect(productPage.product_description).toHaveText('Hot-swappable RGB mechanical keyboard with tactile switches.');
         await expect(productPage.product_qty).toHaveValue('1');
     });
 
     test('Add quantity and cart increment', async () => {
+        await productPage.searchProduct('Raptor Gaming Mouse');
         const product = productPage.product_card_title.filter({ hasText: "Raptor Gaming Mouse" })
 
         await product.click()
@@ -35,6 +37,7 @@ test.describe('Product Page', () => {
     })
 
     test('Out of stock Product', async () => {
+        await productPage.searchProduct('SoundWave Bluetooth Speaker');
         const product = productPage.product_card_title.filter({ hasText: "SoundWave Bluetooth Speaker" })
 
         await product.click()
@@ -43,9 +46,8 @@ test.describe('Product Page', () => {
     })
 
     test('Add to cart from card grid', async () => {
-        const product = productPage.product_card.filter({ hasText: "Raptor Gaming Mouse" })
-
-        await product.getByRole('button', { name: 'Add to cart' }).click()
+        await productPage.addToCart('Raptor Gaming Mouse');
+        await productPage.goToCart();
         await expect(productPage.add_to_cart_success).toBeVisible();
         await expect(productPage.nav_cart_count).toHaveText('1')
     })

@@ -8,7 +8,12 @@ export class BasePage {
     readonly add_to_cart_success: Locator;
     readonly nav_brand: Locator;
     readonly product_card: Locator;
+    readonly nav_cart: Locator;
     readonly nav_cart_count: Locator;
+    readonly search: Locator;
+    readonly search_submit: Locator;
+    readonly cart_checkout: Locator;
+    readonly cart_clear: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -18,7 +23,13 @@ export class BasePage {
         this.add_to_cart_success = page.getByText('Added');
         this.nav_brand = page.getByTestId('nav-brand');
         this.product_card = page.getByTestId('product-card');
+        this.nav_cart = page.getByTestId('nav-cart')
         this.nav_cart_count = page.getByTestId('nav-cart-count');
+        this.search = page.getByLabel('Search products');
+        this.search_submit = page.getByTestId('search-submit')
+        this.cart_checkout = page.getByTestId('cart-checkout');
+        this.cart_clear = page.getByTestId('cart-clear');
+
     }
 
     async waitForLoggedIn() {
@@ -27,5 +38,20 @@ export class BasePage {
 
     async goto(path: string) {
         await this.page.goto(path);
+    }
+
+    async searchProduct(productName : string){
+        await this.search.fill(productName);
+        await this.search_submit.click();
+    }
+
+    async addToCart(productName : string){
+        await this.searchProduct(productName);
+        const product = this.product_card.filter({ hasText: productName })
+        await product.getByRole('button', { name: 'Add to cart' }).click()
+    }
+
+    async goToCart(){
+        await this.nav_cart.click();
     }
 }
