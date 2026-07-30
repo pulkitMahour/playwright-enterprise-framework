@@ -15,6 +15,7 @@ export class CheckoutPage extends BasePage {
     readonly summary_total: Locator;
     readonly payment_note: Locator;
     readonly checkout_place_order: Locator;
+    readonly order_detail: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -31,5 +32,26 @@ export class CheckoutPage extends BasePage {
         this.summary_total = page.getByTestId('summary-total');
         this.payment_note = page.getByTestId('payment-note');
         this.checkout_place_order = page.getByTestId('checkout-place-order');
+        this.order_detail = page.getByTestId('order-detail');
+    }
+
+    calculation(price: number): { tax: string; shipping: string; total: string } {
+        const taxNum = (price / 100) * 10;
+        const shippingNum = price < 100 ? 10 : 0;
+        const totalNum = price + taxNum + shippingNum;
+
+        return {
+            tax: taxNum.toFixed(2),
+            shipping: shippingNum.toFixed(2),
+            total: totalNum.toFixed(2)
+        };
+    }
+
+    async clearCart(){
+        const isCartVisible = await this.nav_cart_count.isVisible();
+        if (isCartVisible){
+            await this.nav_cart.click();
+            await this.cart_clear.click();
+        }
     }
 };

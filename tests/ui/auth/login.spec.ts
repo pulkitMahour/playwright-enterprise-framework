@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from '../../../pages/LoginPage';
 import { customLogin } from '../../../fixtures/auth.fixture';
+import { CheckoutPage } from '../../../pages/CheckoutPage';
 
 test.describe('Login Page', () => {
     customLogin('Login test with valid credentials', async ({ page, loginFixture }) => {
@@ -68,8 +69,11 @@ test.describe('Login Page', () => {
 
     test('go to checkout without login', async ({ page }) => {
         const loginPage = new LoginPage(page);
+        const checkoutPage = new CheckoutPage(page)
 
-        await page.goto('/checkout');
+        await checkoutPage.goto('/');
+        await checkoutPage.addToCart('Raptor Gaming Mouse');
+        await checkoutPage.cart_checkout.click()
         await expect(page).toHaveURL('/login');
 
         await loginPage.login('user@demo.com', 'user123');

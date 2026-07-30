@@ -13,6 +13,7 @@ export class BasePage {
     readonly search: Locator;
     readonly search_submit: Locator;
     readonly cart_checkout: Locator;
+    readonly cart_clear: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -27,6 +28,8 @@ export class BasePage {
         this.search = page.getByLabel('Search products');
         this.search_submit = page.getByTestId('search-submit')
         this.cart_checkout = page.getByTestId('cart-checkout');
+        this.cart_clear = page.getByTestId('cart-clear');
+
     }
 
     async waitForLoggedIn() {

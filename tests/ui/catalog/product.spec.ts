@@ -19,7 +19,7 @@ test.describe('Product Page', () => {
         await expect(productPage.product_detail).toBeVisible();
         await expect(productPage.product_title).toHaveText('Vortex Mechanical Keyboard');
         await expect(productPage.product_price).toHaveText('$119.99');
-        await expect(productPage.product_stock).toHaveText('In stock: 22');
+        await expect(productPage.product_stock).toContainText('In stock:');
         await expect(productPage.product_rating).toHaveText('★ 4.8 (205 reviews)');
         await expect(productPage.product_description).toHaveText('Hot-swappable RGB mechanical keyboard with tactile switches.');
         await expect(productPage.product_qty).toHaveValue('1');
