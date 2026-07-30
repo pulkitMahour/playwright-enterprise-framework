@@ -46,7 +46,8 @@ test.describe('Product Page', () => {
     })
 
     test('Add to cart from card grid', async () => {
-        productPage.addToCart('Raptor Gaming Mouse');
+        await productPage.addToCart('Raptor Gaming Mouse');
+        await productPage.goToCart();
         await expect(productPage.add_to_cart_success).toBeVisible();
         await expect(productPage.nav_cart_count).toHaveText('1')
     })

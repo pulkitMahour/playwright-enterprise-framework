@@ -1,7 +1,7 @@
 import { test as base, BrowserContext } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
-import fs from 'fs';
-import path from 'path';
+// import fs from 'fs';
+// import path from 'path';
 
 export type TestRole = 'user' | 'admin';
 

@@ -73,6 +73,7 @@ test.describe('Login Page', () => {
 
         await checkoutPage.goto('/');
         await checkoutPage.addToCart('Raptor Gaming Mouse');
+        await checkoutPage.goToCart();
         await checkoutPage.cart_checkout.click()
         await expect(page).toHaveURL('/login');
 

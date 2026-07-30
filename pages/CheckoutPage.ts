@@ -36,9 +36,9 @@ export class CheckoutPage extends BasePage {
     }
 
     calculation(price: number): { tax: string; shipping: string; total: string } {
-        const taxNum = (price / 100) * 10;
-        const shippingNum = price < 100 ? 10 : 0;
-        const totalNum = price + taxNum + shippingNum;
+        const taxNum = Math.round(price * 0.1 * 100) / 100;
+        const shippingNum = price > 100 ? 0 : 10;
+        const totalNum = Math.round((price + taxNum + shippingNum) * 100) / 100;
 
         return {
             tax: taxNum.toFixed(2),
@@ -47,11 +47,17 @@ export class CheckoutPage extends BasePage {
         };
     }
 
-    async clearCart(){
-        const isCartVisible = await this.nav_cart_count.isVisible();
-        if (isCartVisible){
-            await this.nav_cart.click();
-            await this.cart_clear.click();
-        }
+    async fillShippingAddress(address: {
+        fullName: string;
+        street: string;
+        city: string;
+        postalCode: string;
+        country: string;
+    }) {
+        await this.checkout_fullname.fill(address.fullName);
+        await this.checkout_street.fill(address.street);
+        await this.checkout_city.fill(address.city);
+        await this.checkout_postalCode.fill(address.postalCode);
+        await this.checkout_country.fill(address.country);
     }
 };

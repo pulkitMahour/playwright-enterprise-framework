@@ -2,12 +2,22 @@ import { type Page } from '@playwright/test';
 import { test, expect } from '../../../fixtures/base.fixture';
 import { CheckoutPage } from '../../../pages/CheckoutPage';
 
+/** Deliberately different from the seeded profile address so the fills are provably ours. */
+const SHIPPING_ADDRESS = {
+    fullName: 'John Doe Yoda',
+    street: '42 Market St-12',
+    city: 'Springfield-Marshal',
+    postalCode: '5555599',
+    country: 'Canada',
+};
+
 test.describe('Checkout Page', () => {
     let page: Page;
     let checkoutPage: CheckoutPage;
 
     test.beforeAll(async ({authenticatedContext}) => {
         page = await authenticatedContext.newPage();
+        await page.addInitScript(() => localStorage.removeItem('testmart_cart'));
         await page.goto('/');
         await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
     })
@@ -17,24 +27,18 @@ test.describe('Checkout Page', () => {
         await checkoutPage.goto('/');
         if (testInfo.title.includes('Shipping threshold over $100')) {
             await checkoutPage.addToCart('Echo Studio Headphones');
+            await checkoutPage.goToCart()
         } else {
             await checkoutPage.addToCart('Raptor Gaming Mouse');
+            await checkoutPage.goToCart()
         }
         await checkoutPage.cart_checkout.click();
         await expect(page).toHaveURL('/checkout');
     })
 
-    test.afterEach(async () => {
-        await checkoutPage.clearCart();
-    })
-
     test('Filling values in the checkout form and verify summary', async () => {
         await expect(checkoutPage.checkout_form).toBeVisible();
-        await checkoutPage.checkout_fullname.fill('John Doe Yoda');
-        await checkoutPage.checkout_street.fill('42 Market St-12');
-        await checkoutPage.checkout_city.fill('Springfield-Marshal');
-        await checkoutPage.checkout_postalCode.fill('5555599');
-        await checkoutPage.checkout_country.fill('Canada');
+        await checkoutPage.fillShippingAddress(SHIPPING_ADDRESS);
         await expect(checkoutPage.payment_note).toHaveText('Mock payment — no card required. Your order is marked paid instantly.')
         await expect(checkoutPage.checkout_summary).toBeVisible();
     })
@@ -60,10 +64,15 @@ test.describe('Checkout Page', () => {
     })
 
     test('Place order verification', async () => {
+        await checkoutPage.fillShippingAddress(SHIPPING_ADDRESS);
         await checkoutPage.checkout_place_order.click();
-        const order_id = await checkoutPage.order_detail.getAttribute('data-order-id');
-        await expect(page).toHaveURL(`/orders/${order_id}`);
-        await expect(checkoutPage.order_detail).toBeVisible()
+
+        await expect(page).toHaveURL(/\/orders\/[a-f0-9]{24}$/);
+        await expect(checkoutPage.order_detail).toBeVisible();
+        await expect(checkoutPage.order_detail).toHaveAttribute(
+            'data-order-id',
+            page.url().split('/').pop()!
+        );
         await expect(checkoutPage.nav_cart_count).toBeHidden();
     })
 

@@ -49,6 +49,9 @@ export class BasePage {
         await this.searchProduct(productName);
         const product = this.product_card.filter({ hasText: productName })
         await product.getByRole('button', { name: 'Add to cart' }).click()
+    }
+
+    async goToCart(){
         await this.nav_cart.click();
     }
 }
