@@ -16,6 +16,9 @@ export class BasePage {
     readonly cart_clear: Locator;
     readonly nav_orders: Locator;
     readonly order_detail: Locator;
+    readonly nav_profile: Locator;
+    readonly logoutButton: Locator;
+    readonly loginStatusButton: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -33,7 +36,9 @@ export class BasePage {
         this.cart_clear = page.getByTestId('cart-clear');
         this.nav_orders = page.getByTestId('nav-orders');
         this.order_detail = page.getByTestId('order-detail');
-
+        this.nav_profile = page.getByTestId('nav-profile')
+        this.logoutButton = page.getByTestId('nav-logout');
+        this.loginStatusButton = page.getByTestId('nav-login');
     }
 
     async waitForLoggedIn() {
