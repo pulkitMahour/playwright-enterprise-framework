@@ -1,4 +1,4 @@
-import { test as base } from '@playwright/test';
+import { test as base, BrowserContext } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { credentialsFor } from './base.fixture';
@@ -23,5 +23,28 @@ export const customRegister = base.extend<{ registerFixture: RegisterPage }>({
         await use(registerPage);
     }
 })
+
+export const test = base.extend<object, { authenticatedContext: BrowserContext }>({
+    authenticatedContext: [
+        async ({ browser }, use) => {
+            const id = Date.now();
+            const name = `tester-${id}`
+            const email = `tester${id}@demo.com`
+            const password = 'user123'
+            const context = await browser.newContext();
+            const page = await context.newPage();
+
+            const auth = new RegisterPage(page);
+            await auth.gotoRegisterPage();
+            await auth.register(name, email, password);
+            await auth.waitForLoggedIn();
+
+            await page.close();
+            await use(context);
+            await context.close();
+        },
+        { scope: 'worker' },
+    ],
+});
 
 export { expect } from '@playwright/test';

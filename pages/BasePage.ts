@@ -14,6 +14,8 @@ export class BasePage {
     readonly search_submit: Locator;
     readonly cart_checkout: Locator;
     readonly cart_clear: Locator;
+    readonly nav_orders: Locator;
+    readonly order_detail: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -29,6 +31,8 @@ export class BasePage {
         this.search_submit = page.getByTestId('search-submit')
         this.cart_checkout = page.getByTestId('cart-checkout');
         this.cart_clear = page.getByTestId('cart-clear');
+        this.nav_orders = page.getByTestId('nav-orders');
+        this.order_detail = page.getByTestId('order-detail');
 
     }
 
