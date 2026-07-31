@@ -72,6 +72,7 @@ newRegister.describe('Profile Page New User', () => {
         await expect(profilePage.profile_email).toBeDisabled();
         await profilePage.fillProfileForm(updated_profile);
         await profilePage.profile_save.click();
+        await expect(profilePage.profile_save).toBeEnabled();
         await page.reload();
         await expect(profilePage.profile_name).toHaveValue(updated_profile.fullName);
         await expect(profilePage.profile_street).toHaveValue(updated_profile.street);
@@ -81,9 +82,10 @@ newRegister.describe('Profile Page New User', () => {
     })
 
     newRegister('Invalid input', async () => {
-        await profilePage.profile_name.fill('');
+        await profilePage.profile_name.fill('A');
         await profilePage.profile_save.click();
-        await expect(profilePage.profile_name).toHaveJSProperty('validity.valueMissing', true);
+        await expect(profilePage.profile_error).toBeVisible();
+        await expect(profilePage.profile_error).toHaveText('name must be longer than or equal to 2 characters')
         await page.reload();
         await expect(profilePage.profile_name).toHaveValue(updated_profile.fullName);
     })
@@ -91,7 +93,8 @@ newRegister.describe('Profile Page New User', () => {
     newRegister('Update Password and re-login with old password', async () => {
         await profilePage.profile_password.fill(updated_profile.password);
         await profilePage.profile_save.click();
-        
+        await expect(profilePage.profile_save).toBeEnabled();
+
         await page.goto('/');
         await profilePage.logoutButton.click();
         await expect(profilePage.loginStatusButton).toBeVisible();

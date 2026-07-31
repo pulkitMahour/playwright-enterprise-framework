@@ -11,6 +11,7 @@ export class ProfilePage extends BasePage {
     readonly profile_postalCode: Locator;
     readonly profile_country: Locator;
     readonly profile_save: Locator;
+    readonly profile_error: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -23,6 +24,7 @@ export class ProfilePage extends BasePage {
         this.profile_postalCode = page.getByTestId('profile-postalCode');
         this.profile_country = page.getByTestId('profile-country');
         this.profile_save = page.getByTestId('profile-save');
+        this.profile_error = page.getByTestId('profile-error');
     }
 
     async fillProfileForm(address: {
