@@ -24,8 +24,8 @@ export const customRegister = base.extend<{ registerFixture: RegisterPage }>({
     }
 })
 
-export const test = base.extend<object, { authenticatedContext: BrowserContext }>({
-    authenticatedContext: [
+export const test = base.extend<object, { freshUserContext: BrowserContext }>({
+    freshUserContext: [
         async ({ browser }, use) => {
             const id = Date.now();
             const name = `tester-${id}`
