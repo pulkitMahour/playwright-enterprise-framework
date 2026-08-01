@@ -13,10 +13,7 @@ export class AdminPage extends BasePage {
     readonly admin_stat_revenue : Locator;
     readonly admin_products_table: Locator;
     readonly admin_product_row: Locator;
-    readonly admin_product_seed_tag: Locator;
     readonly product_create: Locator;
-    readonly product_edit: Locator;
-    readonly product_delete: Locator;
     readonly product_form: Locator;
     readonly product_form_name: Locator;
     readonly product_form_description: Locator;
@@ -46,10 +43,7 @@ export class AdminPage extends BasePage {
         this.admin_stat_revenue = page.getByTestId('admin-stat-revenue');
         this.admin_products_table = this.page.getByTestId('admin-products-table');
         this.admin_product_row = this.admin_products_table.getByTestId('admin-product-row');
-        this.admin_product_seed_tag = this.admin_product_row.getByTestId('admin-product-seed-tag');
         this.product_create = this.page.getByTestId('admin-product-create');
-        this.product_edit = this.page.getByTestId('admin-product-edit');
-        this.product_delete = this.page.getByTestId('admin-product-delete');
         this.product_form = this.page.getByTestId('admin-product-form');
         this.product_form_name = this.product_form.getByTestId('product-form-name');
         this.product_form_description = this.product_form.getByTestId('product-form-description');
@@ -65,6 +59,11 @@ export class AdminPage extends BasePage {
         this.admin_users_table = this.page.getByTestId('admin-users-table');
         this.admin_user_row = this.admin_users_table.getByTestId('admin-user-row');
         this.admin_user_delete = this.admin_user_row.getByTestId('admin-user-delete');
+    }
+
+    /** The single admin product row for a product name — scope per-row locators off this. */
+    rowFor(productName: string): Locator {
+        return this.admin_product_row.filter({ hasText: productName });
     }
 
     async fillProductForm(product: {

@@ -26,8 +26,8 @@ test.describe('Profile Page Existing User', () => {
     let page: Page;
     let profilePage: ProfilePage;
 
-    test.beforeAll(async ({ authenticatedContext }) => {
-        page = await authenticatedContext.newPage();
+    test.beforeAll(async ({ userContext }) => {
+        page = await userContext.newPage();
         await page.goto('/');
         await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
     })

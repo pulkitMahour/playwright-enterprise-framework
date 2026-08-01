@@ -1,12 +1,19 @@
-import { test, expect } from '@playwright/test';
+import { type Page } from '@playwright/test';
+import { test, expect } from '../../../fixtures/base.fixture';
 import { LoginPage } from '../../../pages/LoginPage';
 
 test.describe('rbac Page', () => {
-    test('RBAC test with user credentials', async ({ page }) => {
-        const loginPage = new LoginPage(page);
-        await loginPage.gotoLoginPage();
-        await loginPage.login("user@demo.com", "user123");
-        await expect(page).toHaveURL('/');
+    let page: Page;
+    let loginPage: LoginPage;
+
+    test.beforeAll(async ({ userContext }) => {
+        page = await userContext.newPage();
+        await page.goto('/');
+        await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
+        loginPage = new LoginPage(page);
+    });
+
+    test('RBAC test with user credentials', async () => {
         await page.goto('/admin');
         await expect(page).toHaveURL('/');
         await expect(loginPage.nav_admin).toBeHidden();

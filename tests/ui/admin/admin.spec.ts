@@ -18,8 +18,8 @@ test.describe('Admin Page', () => {
     let page: Page;
     let adminPage: AdminPage;
 
-    test.beforeAll(async ({ authenticatedContext }) => {
-        page = await authenticatedContext.newPage();
+    test.beforeAll(async ({ adminContext }) => {
+        page = await adminContext.newPage();
         await page.goto('/');
         await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
     });
@@ -55,12 +55,17 @@ test.describe('Admin Page', () => {
             await expect(adminPage.product_form).toBeVisible();
             await adminPage.fillProductForm(NEW_PRODUCT);
             await adminPage.product_form_submit.click();
-            await expect(adminPage.admin_product_row.filter({ hasText: NEW_PRODUCT.name })).toBeVisible();
+
+            const createdRow = adminPage.rowFor(NEW_PRODUCT.name);
+            await expect(createdRow).toBeVisible();
+            // A user-created product is not seed data: no "default" tag, and deletion is allowed.
+            await expect(createdRow.getByTestId('admin-product-seed-tag')).toHaveCount(0);
+            await expect(createdRow.getByTestId('admin-product-delete')).toBeEnabled();
         });
 
         test('Verify product editing', async () => {
             await adminPage.admin_nav_products.click();
-            const productRow = adminPage.admin_product_row.filter({ hasText: NEW_PRODUCT.name });
+            const productRow = adminPage.rowFor(NEW_PRODUCT.name);
             await expect(productRow).toBeVisible();
             const editButton = productRow.getByTestId('admin-product-edit');
             await editButton.click();
@@ -75,7 +80,7 @@ test.describe('Admin Page', () => {
 
         test('Verify product deletion', async () => {
             await adminPage.admin_nav_products.click();
-            const productRow = adminPage.admin_product_row.filter({ hasText: NEW_PRODUCT.name });
+            const productRow = adminPage.rowFor(NEW_PRODUCT.name);
             await expect(productRow).toBeVisible();
             const deleteButton = productRow.getByTestId('admin-product-delete');
 
@@ -97,10 +102,10 @@ test.describe('Admin Page', () => {
 
         test('Verify seeded product cannot be deleted', async () => {
             await adminPage.admin_nav_products.click();
-            const seededProductRow = adminPage.admin_product_row.filter({ hasText: 'Raptor Gaming Mouse' });
+            const seededProductRow = adminPage.rowFor('Raptor Gaming Mouse');
             await expect(seededProductRow).toBeVisible();
-            const deleteButton = seededProductRow.getByTestId('admin-product-delete');
-            await expect(deleteButton).toBeDisabled();
+            await expect(seededProductRow.getByTestId('admin-product-seed-tag')).toHaveText('default');
+            await expect(seededProductRow.getByTestId('admin-product-delete')).toBeDisabled();
         });
     });
 
