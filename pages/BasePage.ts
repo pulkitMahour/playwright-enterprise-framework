@@ -14,6 +14,12 @@ export class BasePage {
     readonly search_submit: Locator;
     readonly cart_checkout: Locator;
     readonly cart_clear: Locator;
+    readonly nav_orders: Locator;
+    readonly order_detail: Locator;
+    readonly nav_profile: Locator;
+    readonly logoutButton: Locator;
+    readonly loginStatusButton: Locator;
+    readonly checkout_place_order: Locator;
 
     constructor(page: Page) {
         this.page = page;
@@ -29,7 +35,12 @@ export class BasePage {
         this.search_submit = page.getByTestId('search-submit')
         this.cart_checkout = page.getByTestId('cart-checkout');
         this.cart_clear = page.getByTestId('cart-clear');
-
+        this.nav_orders = page.getByTestId('nav-orders');
+        this.order_detail = page.getByTestId('order-detail');
+        this.nav_profile = page.getByTestId('nav-profile')
+        this.logoutButton = page.getByTestId('nav-logout');
+        this.loginStatusButton = page.getByTestId('nav-login');
+        this.checkout_place_order = page.getByTestId('checkout-place-order');
     }
 
     async waitForLoggedIn() {
@@ -40,18 +51,18 @@ export class BasePage {
         await this.page.goto(path);
     }
 
-    async searchProduct(productName : string){
+    async searchProduct(productName: string) {
         await this.search.fill(productName);
         await this.search_submit.click();
     }
 
-    async addToCart(productName : string){
+    async addToCart(productName: string) {
         await this.searchProduct(productName);
         const product = this.product_card.filter({ hasText: productName })
         await product.getByRole('button', { name: 'Add to cart' }).click()
     }
 
-    async goToCart(){
+    async goToCart() {
         await this.nav_cart.click();
     }
 }

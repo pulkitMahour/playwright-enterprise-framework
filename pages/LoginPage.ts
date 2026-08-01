@@ -8,8 +8,6 @@ export class LoginPage extends BasePage {
     readonly loginError: Locator;
     readonly loginSuccess: Locator;
     readonly logoutSuccess: Locator;
-    readonly logoutButton: Locator;
-    readonly loginStatusButton: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -18,9 +16,7 @@ export class LoginPage extends BasePage {
         this.loginButton = page.getByTestId("login-submit");
         this.loginError = page.getByTestId('login-error');
         this.loginSuccess = page.getByText('Welcome back')
-        this.logoutButton = page.getByTestId('nav-logout');
         this.logoutSuccess = page.getByText('Logged out');
-        this.loginStatusButton = page.getByTestId('nav-login');
     }
 
     async gotoLoginPage() {

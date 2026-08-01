@@ -1,4 +1,4 @@
-import { test as base, BrowserContext } from '@playwright/test';
+import { test as base, Browser, BrowserContext } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 // import fs from 'fs';
 // import path from 'path';
@@ -35,24 +35,36 @@ export function credentialsFor(role: TestRole) {
 /** The role this run authenticates as. Specs can import it for role-aware assertions. */
 export const testRole: TestRole = resolveRole();
 
-export const test = base.extend<object, { authenticatedContext: BrowserContext }>({
-    authenticatedContext: [
-        async ({ browser }, use) => {
-            const { email, password } = credentialsFor(testRole);
-            const context = await browser.newContext();
-            const page = await context.newPage();
+function contextForRole(role: TestRole) {
+    return async (
+        { browser }: { browser: Browser },
+        use: (context: BrowserContext) => Promise<void>,
+    ) => {
+        const { email, password } = credentialsFor(role);
+        const context = await browser.newContext();
+        const page = await context.newPage();
 
-            const auth = new LoginPage(page);
-            await auth.gotoLoginPage();
-            await auth.login(email, password);
-            await auth.waitForLoggedIn();
+        const auth = new LoginPage(page);
+        await auth.gotoLoginPage();
+        await auth.login(email, password);
+        await auth.waitForLoggedIn();
 
-            await page.close();
-            await use(context);
-            await context.close();
-        },
-        { scope: 'worker' },
-    ],
+        await page.close();
+        await use(context);
+        await context.close();
+    };
+}
+
+export const test = base.extend<object, {
+    authenticatedContext: BrowserContext;
+    adminContext: BrowserContext;
+    userContext: BrowserContext;
+}>({
+    authenticatedContext: [contextForRole(testRole), { scope: 'worker' }],
+
+    adminContext: [contextForRole('admin'), { scope: 'worker' }],
+
+    userContext: [contextForRole('user'), { scope: 'worker' }],
 });
 
 

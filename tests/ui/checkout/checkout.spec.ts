@@ -2,7 +2,6 @@ import { type Page } from '@playwright/test';
 import { test, expect } from '../../../fixtures/base.fixture';
 import { CheckoutPage } from '../../../pages/CheckoutPage';
 
-/** Deliberately different from the seeded profile address so the fills are provably ours. */
 const SHIPPING_ADDRESS = {
     fullName: 'John Doe Yoda',
     street: '42 Market St-12',
