@@ -7,7 +7,6 @@ export type TestRole = 'user' | 'admin';
 
 const ROLES: readonly TestRole[] = ['user', 'admin'];
 
-/** Reads TEST_ROLE (default 'user') and fails loudly on a typo instead of silently. */
 function resolveRole(): TestRole {
     const raw = (process.env.TEST_ROLE ?? 'user').trim().toLowerCase();
     if (!ROLES.includes(raw as TestRole)) {
@@ -18,7 +17,6 @@ function resolveRole(): TestRole {
     return raw as TestRole;
 }
 
-/** Credentials come from `.env` as <ROLE>_EMAIL / <ROLE>_PASSWORD — never hardcoded here. */
 export function credentialsFor(role: TestRole) {
     const prefix = role.toUpperCase();
     const email = process.env[`${prefix}_EMAIL`];
