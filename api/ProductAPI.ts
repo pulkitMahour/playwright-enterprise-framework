@@ -23,16 +23,18 @@ export class ProductAPI extends BaseAPI {
         return this.request.get(this.url(`/products/${id}`));
     }
 
+    // --- admin-only writes: they live under /api/admin/products, NOT /api/products ---
+
     async create(data: unknown): Promise<APIResponse> {
-        return this.request.post(this.url('/products'), { data });
+        return this.request.post(this.url('/admin/products'), { data });
     }
 
     async update(id: string, data: unknown): Promise<APIResponse> {
-        return this.request.put(this.url(`/products/${id}`), { data });
+        return this.request.put(this.url(`/admin/products/${id}`), { data });
     }
 
     async remove(id: string): Promise<APIResponse> {
-        return this.request.delete(this.url(`/products/${id}`));
+        return this.request.delete(this.url(`/admin/products/${id}`));
     }
 }
 

@@ -39,7 +39,17 @@ export class OrderAPI extends BaseAPI {
         return this.request.get(this.url(`/orders/${id}`));
     }
 
+    // --- admin-only: under /api/admin, not /api/orders ---
+
     async listAll(): Promise<APIResponse> {
-        return this.request.get(this.url('/orders'));
+        return this.request.get(this.url('/admin/orders'));
+    }
+
+    async updateStatus(id: string, data: unknown): Promise<APIResponse> {
+        return this.request.put(this.url(`/admin/orders/${id}/status`), { data });
+    }
+
+    async remove(id: string): Promise<APIResponse> {
+        return this.request.delete(this.url(`/admin/orders/${id}`));
     }
 }
