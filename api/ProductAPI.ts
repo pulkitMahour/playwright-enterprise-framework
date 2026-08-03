@@ -6,6 +6,8 @@ export type ProductQuery = {
     category?: string;
     sort?: string;
     page?: number;
+    /** Server clamps this to 1..50 and defaults to 12. */
+    limit?: number;
 };
 
 export class ProductAPI extends BaseAPI {

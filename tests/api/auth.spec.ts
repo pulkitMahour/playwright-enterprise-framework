@@ -21,6 +21,9 @@ test.describe('Auth Login/Logout', () => {
         const response = await authAPI.login('invalid@demo.com', 'invalidpassword');
         expect(response.status()).toBe(401);
 
+        const responseBody = await response.text();
+        expect(responseBody).toContain('Invalid email or password');
+
         const headers = response.headers();
         expect(headers['set-cookie']).toBeUndefined();
     });
@@ -41,8 +44,7 @@ test.describe('Auth Login/Logout', () => {
     });
 });
 
-test.describe('Auth Register', () => {
-    test.describe.configure({ mode: 'serial' });
+test.describe('Auth Register', () => {;
     let authAPI: AuthAPI;
     const id = Date.now();
 
@@ -56,7 +58,55 @@ test.describe('Auth Register', () => {
     });
 
     test('should fail register with existing email', async () => {
-        const response = await authAPI.register('New User', `newuser${id}@demo.com`, 'newuser123');
+        const response = await authAPI.register('Duplicate User', `user@demo.com`, 'user123');
         expect(response.status()).toBe(409);
+        const responseBody = await response.text();
+        expect(responseBody).toContain('Email already registered');
     });
+});
+
+test.describe('Auth Validation', () => {
+    let authAPI: AuthAPI;
+
+    test.beforeEach(async ({ request }) => {
+        authAPI = new AuthAPI(request);
+    });
+
+    const invalidLogins: Array<{ label: string; payload: unknown }> = [
+        { label: 'an empty body', payload: {} },
+        { label: 'a missing password', payload: { email: 'user@demo.com' } },
+        { label: 'a missing email', payload: { password: 'user123' } },
+        { label: 'a malformed email', payload: { email: 'not-an-email', password: 'user123' } },
+        { label: 'a non-string password', payload: { email: 'user@demo.com', password: 12345 } },
+    ];
+
+    for (const { label, payload } of invalidLogins) {
+        test(`login should reject ${label}`, async () => {
+            const response = await authAPI.loginRaw(payload);
+            expect(response.status()).toBe(400);
+        });
+    }
+
+    const invalidRegistrations: Array<{ label: string; payload: unknown }> = [
+        { label: 'an empty body', payload: {} },
+        {
+            label: 'a name shorter than 2 chars',
+            payload: { name: 'A', email: `short${Date.now()}@demo.com`, password: 'user123' },
+        },
+        {
+            label: 'a password shorter than 6 chars',
+            payload: { name: 'Short Password', email: `pw${Date.now()}@demo.com`, password: '123' },
+        },
+        {
+            label: 'a malformed email',
+            payload: { name: 'Bad Email', email: 'not-an-email', password: 'user123' },
+        },
+    ];
+
+    for (const { label, payload } of invalidRegistrations) {
+        test(`register should reject ${label}`, async () => {
+            const response = await authAPI.registerRaw(payload);
+            expect(response.status()).toBe(400);
+        });
+    }
 });
