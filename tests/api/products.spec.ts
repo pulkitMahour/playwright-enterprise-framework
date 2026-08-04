@@ -72,8 +72,9 @@ test.describe('Product Query Tests', () => {
     });
 
     test('Product Query: pagination should return a different slice per page', async () => {
-        const firstResponse = await productAPI.list({ page: 1 });
-        const secondResponse = await productAPI.list({ page: 2 });
+        const query = { sort: 'price-asc', limit: 5 };
+        const firstResponse = await productAPI.list({ ...query, page: 1 });
+        const secondResponse = await productAPI.list({ ...query, page: 2 });
         expect(firstResponse.status()).toBe(200);
         expect(secondResponse.status()).toBe(200);
 
@@ -82,15 +83,16 @@ test.describe('Product Query Tests', () => {
 
         expect(firstPage.page).toBe(1);
         expect(secondPage.page).toBe(2);
+        expect(firstPage.limit).toBe(query.limit);
         expect(firstPage.total).toBe(secondPage.total);
-        expect(firstPage.products.length).toBeLessThanOrEqual(firstPage.limit);
-        expect(secondPage.products.length).toBeLessThanOrEqual(secondPage.limit);
+        expect(firstPage.pages).toBe(Math.ceil(firstPage.total / query.limit));
 
+        expect(firstPage.products).toHaveLength(query.limit);
         expect(secondPage.products.length).toBeGreaterThan(0);
-        const firstPageIds = firstPage.products.map((product: { _id: string }) => product._id);
-        for (const product of secondPage.products) {
-            expect(firstPageIds).not.toContain(product._id);
-        }
+        expect(secondPage.products.length).toBeLessThanOrEqual(query.limit);
+
+        const lastOnFirstPage = firstPage.products[firstPage.products.length - 1].price;
+        expect(secondPage.products[0].price).toBeGreaterThanOrEqual(lastOnFirstPage);
     });
 
     test('Product Query: limit caps the page size', async () => {

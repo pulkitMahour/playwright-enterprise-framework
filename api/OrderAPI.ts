@@ -2,23 +2,23 @@ import { APIResponse } from '@playwright/test';
 import { BaseAPI } from './BaseAPI';
 
 export type OrderItemInput = {
-    product: string; // the product's `_id`
+    product: string;
     qty: number;
     price?: number;
     name?: string;
-    image?: string;
 };
 
 export type ShippingAddress = {
-    address?: string;
-    city?: string;
-    postalCode?: string;
-    country?: string;
+    fullName: string;
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
 };
 
 export type CreateOrderInput = {
-    orderItems: OrderItemInput[];
-    shippingAddress?: ShippingAddress;
+    items: OrderItemInput[];
+    shippingAddress: ShippingAddress;
     paymentMethod?: string;
 };
 
@@ -38,8 +38,6 @@ export class OrderAPI extends BaseAPI {
     async getById(id: string): Promise<APIResponse> {
         return this.request.get(this.url(`/orders/${id}`));
     }
-
-    // --- admin-only: under /api/admin, not /api/orders ---
 
     async listAll(): Promise<APIResponse> {
         return this.request.get(this.url('/admin/orders'));
