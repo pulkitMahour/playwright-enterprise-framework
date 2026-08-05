@@ -1,0 +1,112 @@
+import { test, expect } from '@playwright/test';
+import { AuthAPI } from '../../api/AuthAPI';
+
+test.describe('Auth Login/Logout', () => {
+    let authAPI: AuthAPI;
+
+    test.beforeEach(async ({ request }) => {
+        authAPI = new AuthAPI(request);
+    });
+
+    test('should login successfully with valid credentials', async () => {
+        const response = await authAPI.login('user@demo.com', 'user123');
+        expect(response.status()).toBe(200);
+
+        const headers = response.headers();
+        expect(headers['set-cookie']).toBeDefined();
+        expect(headers['set-cookie']).toContain('token');
+    });
+
+    test('should fail login with invalid credentials', async () => {
+        const response = await authAPI.login('invalid@demo.com', 'invalidpassword');
+        expect(response.status()).toBe(401);
+
+        const responseBody = await response.text();
+        expect(responseBody).toContain('Invalid email or password');
+
+        const headers = response.headers();
+        expect(headers['set-cookie']).toBeUndefined();
+    });
+
+    test('should logout successfully', async () => {
+        const loginResponse = await authAPI.login('user@demo.com', 'user123');
+        expect(loginResponse.status()).toBe(200);
+
+        const logoutResponse = await authAPI.logout();
+        expect(logoutResponse.status()).toBe(200);
+
+        const headers = logoutResponse.headers();
+        expect(headers['set-cookie']).toBeDefined();
+        expect(headers['set-cookie']).toContain('token=;');
+
+        const usersResponse = await authAPI.get('/users/me');
+        expect(usersResponse.status()).toBe(401);
+    });
+});
+
+test.describe('Auth Register', () => {;
+    let authAPI: AuthAPI;
+    const id = Date.now();
+
+    test.beforeEach(async ({ request }) => {
+        authAPI = new AuthAPI(request);
+    });
+
+    test('should register successfully with valid data', async () => {
+        const response = await authAPI.register(`New User ${id}`, `newuser${id}@demo.com`, 'newuser123');
+        expect(response.status()).toBe(201);
+    });
+
+    test('should fail register with existing email', async () => {
+        const response = await authAPI.register('Duplicate User', `user@demo.com`, 'user123');
+        expect(response.status()).toBe(409);
+        const responseBody = await response.text();
+        expect(responseBody).toContain('Email already registered');
+    });
+});
+
+test.describe('Auth Validation', () => {
+    let authAPI: AuthAPI;
+
+    test.beforeEach(async ({ request }) => {
+        authAPI = new AuthAPI(request);
+    });
+
+    const invalidLogins: Array<{ label: string; payload: unknown }> = [
+        { label: 'an empty body', payload: {} },
+        { label: 'a missing password', payload: { email: 'user@demo.com' } },
+        { label: 'a missing email', payload: { password: 'user123' } },
+        { label: 'a malformed email', payload: { email: 'not-an-email', password: 'user123' } },
+        { label: 'a non-string password', payload: { email: 'user@demo.com', password: 12345 } },
+    ];
+
+    for (const { label, payload } of invalidLogins) {
+        test(`login should reject ${label}`, async () => {
+            const response = await authAPI.loginRaw(payload);
+            expect(response.status()).toBe(400);
+        });
+    }
+
+    const invalidRegistrations: Array<{ label: string; payload: unknown }> = [
+        { label: 'an empty body', payload: {} },
+        {
+            label: 'a name shorter than 2 chars',
+            payload: { name: 'A', email: `short${Date.now()}@demo.com`, password: 'user123' },
+        },
+        {
+            label: 'a password shorter than 6 chars',
+            payload: { name: 'Short Password', email: `pw${Date.now()}@demo.com`, password: '123' },
+        },
+        {
+            label: 'a malformed email',
+            payload: { name: 'Bad Email', email: 'not-an-email', password: 'user123' },
+        },
+    ];
+
+    for (const { label, payload } of invalidRegistrations) {
+        test(`register should reject ${label}`, async () => {
+            const response = await authAPI.registerRaw(payload);
+            expect(response.status()).toBe(400);
+        });
+    }
+});

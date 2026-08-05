@@ -61,7 +61,6 @@ export class AdminPage extends BasePage {
         this.admin_user_delete = this.admin_user_row.getByTestId('admin-user-delete');
     }
 
-    /** The single admin product row for a product name — scope per-row locators off this. */
     rowFor(productName: string): Locator {
         return this.admin_product_row.filter({ hasText: productName });
     }
