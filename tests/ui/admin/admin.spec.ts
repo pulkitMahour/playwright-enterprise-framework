@@ -58,7 +58,7 @@ test.describe('Admin Page', () => {
 
             const createdRow = adminPage.rowFor(NEW_PRODUCT.name);
             await expect(createdRow).toBeVisible();
-            // A user-created product is not seed data: no "default" tag, and deletion is allowed.
+
             await expect(createdRow.getByTestId('admin-product-seed-tag')).toHaveCount(0);
             await expect(createdRow.getByTestId('admin-product-delete')).toBeEnabled();
         });

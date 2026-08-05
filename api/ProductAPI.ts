@@ -6,7 +6,6 @@ export type ProductQuery = {
     category?: string;
     sort?: string;
     page?: number;
-    /** Server clamps this to 1..50 and defaults to 12. */
     limit?: number;
 };
 
@@ -25,7 +24,6 @@ export class ProductAPI extends BaseAPI {
         return this.request.get(this.url(`/products/${id}`));
     }
 
-    // --- admin-only writes: they live under /api/admin/products, NOT /api/products ---
 
     async create(data: unknown): Promise<APIResponse> {
         return this.request.post(this.url('/admin/products'), { data });
@@ -40,7 +38,6 @@ export class ProductAPI extends BaseAPI {
     }
 }
 
-/** Drops undefined keys so an unset filter is absent from the query string, not `?page=undefined`. */
 function toParams(query: ProductQuery): QueryParams {
     return Object.fromEntries(
         Object.entries(query).filter(([, value]) => value !== undefined),

@@ -30,7 +30,6 @@ export function credentialsFor(role: TestRole) {
     return { email, password };
 }
 
-/** The role this run authenticates as. Specs can import it for role-aware assertions. */
 export const testRole: TestRole = resolveRole();
 
 function contextForRole(role: TestRole) {
