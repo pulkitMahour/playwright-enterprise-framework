@@ -3,8 +3,8 @@ import { LoginPage } from '../../../pages/LoginPage';
 import { customLogin } from '../../../fixtures/auth.fixture';
 import { CheckoutPage } from '../../../pages/CheckoutPage';
 
-test.describe('Login Page', () => {
-    customLogin('Login test with valid credentials', async ({ page, loginFixture }) => {
+test.describe('Login Page', { tag: ['@auth'] }, () => {
+    customLogin('Login test with valid credentials', { tag: '@smoke' }, async ({ page, loginFixture }) => {
 
         await expect(page).toHaveURL('/');
         await expect(loginFixture.loginSuccess).toBeVisible();
@@ -21,7 +21,7 @@ test.describe('Login Page', () => {
         await expect(page).toHaveURL('/login');
     });
 
-    customLogin('Logout', async ({ page, loginFixture }) => {
+    customLogin('Logout', { tag: '@smoke' }, async ({ page, loginFixture }) => {
         await expect(page).toHaveURL('/');
 
         await loginFixture.logoutButton.click();
@@ -57,7 +57,7 @@ test.describe('Login Page', () => {
         await expect(page).toHaveURL('/login');
     });
 
-    test('admin login', async ({ page }) => {
+    test('admin login', { tag: '@sanity' }, async ({ page }) => {
         const loginPage = new LoginPage(page);
         await loginPage.gotoLoginPage();
 

@@ -8,7 +8,15 @@
     "test:headed": "npx playwright test --headed",
     "test:debug": "npx playwright test --debug",
     "test:report": "npx playwright show-report",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:sanity": "playwright test --grep \"@smoke|@sanity\"",
+    "test:regression": "playwright test",
+    "test:api": "playwright test tests/api",
+    "test:ui": "playwright test tests/ui",
+    "test:admin": "playwright test --grep @admin",
+    "test:checkout": "playwright test --grep @checkout",
+    "test:smoke:ci": "playwright test --grep @smoke --project=chromium"
   },
   "keywords": [],
   "author": "",

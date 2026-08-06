@@ -22,7 +22,7 @@ const updated_profile = {
     password: 'newuser123'
 };
 
-test.describe('Profile Page Existing User', () => {
+test.describe('Profile Page Existing User', { tag: ['@profile'] }, () => {
     let page: Page;
     let profilePage: ProfilePage;
 
@@ -38,7 +38,7 @@ test.describe('Profile Page Existing User', () => {
         await expect(page).toHaveURL('/profile')
     })
 
-    test('Verify prefilled profile form', async () => {
+    test('Verify prefilled profile form', { tag: '@smoke' }, async () => {
         await expect(profilePage.profile_form).toBeVisible();
         await expect(profilePage.profile_email).toBeDisabled();
         await expect(profilePage.profile_name).toHaveValue(existing_profile.fullName);
@@ -49,7 +49,7 @@ test.describe('Profile Page Existing User', () => {
     })
 })
 
-newRegister.describe('Profile Page New User', () => {
+newRegister.describe('Profile Page New User', { tag: ['@sanity', '@profile'] }, () => {
     newRegister.describe.configure({ mode: 'serial' })
     let page: Page;
     let profilePage: ProfilePage;

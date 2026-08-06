@@ -3,8 +3,8 @@ import { customRegister } from '../../../fixtures/auth.fixture';
 import { RegisterPage } from '../../../pages/RegisterPage';
 
 
-test.describe('Register Page', () => {
-    customRegister('register test', async ({ page, registerFixture }) => {
+test.describe('Register Page', { tag: ['@auth'] }, () => {
+    customRegister('register test', { tag: '@sanity' }, async ({ page, registerFixture }) => {
         await expect(page).toHaveURL('/');
         await expect(registerFixture.navbar_name).toHaveText('Tiger')
     });

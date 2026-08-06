@@ -1,14 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { AuthAPI } from '../../api/AuthAPI';
 
-test.describe('Auth Login/Logout', () => {
+test.describe('Auth Login/Logout', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
 
     test.beforeEach(async ({ request }) => {
         authAPI = new AuthAPI(request);
     });
 
-    test('should login successfully with valid credentials', async () => {
+    test('should login successfully with valid credentials', { tag: '@smoke' }, async () => {
         const response = await authAPI.login('user@demo.com', 'user123');
         expect(response.status()).toBe(200);
 
@@ -28,7 +28,7 @@ test.describe('Auth Login/Logout', () => {
         expect(headers['set-cookie']).toBeUndefined();
     });
 
-    test('should logout successfully', async () => {
+    test('should logout successfully', { tag: '@sanity' }, async () => {
         const loginResponse = await authAPI.login('user@demo.com', 'user123');
         expect(loginResponse.status()).toBe(200);
 
@@ -44,7 +44,7 @@ test.describe('Auth Login/Logout', () => {
     });
 });
 
-test.describe('Auth Register', () => {;
+test.describe('Auth Register', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
     const id = Date.now();
 
@@ -52,7 +52,7 @@ test.describe('Auth Register', () => {;
         authAPI = new AuthAPI(request);
     });
 
-    test('should register successfully with valid data', async () => {
+    test('should register successfully with valid data', { tag: '@sanity' }, async () => {
         const response = await authAPI.register(`New User ${id}`, `newuser${id}@demo.com`, 'newuser123');
         expect(response.status()).toBe(201);
     });
@@ -65,7 +65,7 @@ test.describe('Auth Register', () => {;
     });
 });
 
-test.describe('Auth Validation', () => {
+test.describe('Auth Validation', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
 
     test.beforeEach(async ({ request }) => {

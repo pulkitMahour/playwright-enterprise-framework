@@ -12,21 +12,21 @@ function validProduct() {
     };
 }
 
-test.describe('Product Query Tests', () => {
+test.describe('Product Query Tests', { tag: ['@api', '@catalog'] }, () => {
     let productAPI: ProductAPI;
 
     test.beforeEach(async ({ request }) => {
         productAPI = new ProductAPI(request);
     });
 
-    test('should list products', async () => {
+    test('should list products', { tag: '@smoke' }, async () => {
         const response = await productAPI.list();
         expect(response.status()).toBe(200);
         const products = await response.json();
         expect(Array.isArray(products.products)).toBe(true);
     });
 
-    test('Product Query: product keyword search should return relevant products', async () => {
+    test('Product Query: product keyword search should return relevant products', { tag: '@sanity' }, async () => {
         const keyword = 'laptop';
         const response = await productAPI.list({ keyword });
         expect(response.status()).toBe(200);
@@ -47,7 +47,7 @@ test.describe('Product Query Tests', () => {
         expect(products.products.length).toBe(0);
     });
 
-    test('Product Query: product category filter should return relevant products', async () => {
+    test('Product Query: product category filter should return relevant products', { tag: '@sanity' }, async () => {
         const category = 'Electronics';
         const response = await productAPI.list({ category });
         expect(response.status()).toBe(200);
@@ -59,7 +59,7 @@ test.describe('Product Query Tests', () => {
         }
     });
 
-    test('Product Query: product sorting should return products in correct order', async () => {
+    test('Product Query: product sorting should return products in correct order', { tag: '@sanity' }, async () => {
         const sort = 'price-asc';
         const response = await productAPI.list({ sort });
         expect(response.status()).toBe(200);
@@ -71,7 +71,7 @@ test.describe('Product Query Tests', () => {
         }
     });
 
-    test('Product Query: pagination should return a different slice per page', async () => {
+    test('Product Query: pagination should return a different slice per page', { tag: '@sanity' }, async () => {
         const query = { sort: 'price-asc', limit: 5 };
         const firstResponse = await productAPI.list({ ...query, page: 1 });
         const secondResponse = await productAPI.list({ ...query, page: 2 });
@@ -108,14 +108,14 @@ test.describe('Product Query Tests', () => {
         expect(response.status()).toBe(400);
     });
 
-    test('should get product categories', async () => {
+    test('should get product categories', { tag: '@sanity' }, async () => {
         const response = await productAPI.getCategories();
         expect(response.status()).toBe(200);
         const categories = await response.json();
         expect(Array.isArray(categories)).toBe(true);
     });
 
-    test('should get product by ID', async () => {
+    test('should get product by ID', { tag: '@sanity' }, async () => {
         const listResponse = await productAPI.list();
         const products = await listResponse.json();
         const productId = products.products[0]._id;
@@ -132,7 +132,7 @@ test.describe('Product Query Tests', () => {
     });
 });
 
-adminContext.describe('Product Management Tests', () => {
+adminContext.describe('Product Management Tests', { tag: ['@api', '@catalog', '@admin'] }, () => {
     adminContext.describe.configure({ mode: 'serial' });
 
     let productAPI: ProductAPI;
@@ -142,7 +142,7 @@ adminContext.describe('Product Management Tests', () => {
         productAPI = new ProductAPI(adminRequest);
     });
 
-    adminContext('should create a new product', async () => {
+    adminContext('should create a new product', { tag: '@sanity' }, async () => {
         const newProduct = {
             name: `Test Product ${Date.now()}`,
             description: 'This is a test product',
@@ -157,7 +157,7 @@ adminContext.describe('Product Management Tests', () => {
         id = createdProduct._id;
     });
 
-    adminContext('should update an existing product', async () => {
+    adminContext('should update an existing product', { tag: '@sanity' }, async () => {
         const updatedData = {
             name: `Updated Product ${Date.now()}`,
             price: 79.99,
@@ -169,7 +169,7 @@ adminContext.describe('Product Management Tests', () => {
         expect(updatedProduct.price).toBe(updatedData.price);
     });
 
-    adminContext('should delete a product', async () => {
+    adminContext('should delete a product', { tag: '@sanity' }, async () => {
         const response = await productAPI.remove(id);
         expect(response.status()).toBe(200);
 
@@ -216,7 +216,7 @@ adminContext.describe('Product Management Tests', () => {
 
 });
 
-test.describe('Product Management Tests (unauthenticated)', () => {
+test.describe('Product Management Tests (unauthenticated)', { tag: ['@api', '@catalog'] }, () => {
     let productAPI: ProductAPI;
 
     test.beforeEach(async ({ request }) => {
@@ -229,7 +229,7 @@ test.describe('Product Management Tests (unauthenticated)', () => {
     });
 });
 
-userContext.describe('Product Management Tests (non-admin user)', () => {
+userContext.describe('Product Management Tests (non-admin user)', { tag: ['@api', '@catalog'] }, () => {
     let productAPI: ProductAPI;
 
     userContext.beforeEach(async ({ userRequest }) => {

@@ -33,7 +33,7 @@ function makeOrderData(item: Partial<OrderItemInput> = {}): CreateOrderInput {
     };
 }
 
-userContext.describe('Placing Orders', () => {
+userContext.describe('Placing Orders', { tag: ['@api', '@orders'] }, () => {
     userContext.describe.configure({ mode: "serial" });
 
     let ordersAPI: OrderAPI;
@@ -53,7 +53,7 @@ userContext.describe('Placing Orders', () => {
         existingStock = products.products[0].countInStock;
     });
 
-    userContext('should create an order successfully', async () => {
+    userContext('should create an order successfully', { tag: '@smoke' }, async () => {
         const orderData = makeOrderData({ product: productId });
         const response = await ordersAPI.create(orderData);
         expect(response.status()).toBe(201);
@@ -139,7 +139,7 @@ userContext.describe('Placing Orders', () => {
     });
 });
 
-userContext.describe('Tax and Shipping Calculation', () => {
+userContext.describe('Tax and Shipping Calculation', { tag: ['@api', '@orders'] }, () => {
     userContext.describe.configure({ mode: "serial" });
     let ordersAPI: OrderAPI;
     let productAPI: ProductAPI;
@@ -247,7 +247,7 @@ userContext.describe('Tax and Shipping Calculation', () => {
     });
 });
 
-adminContext.describe('Admin Order Management', () => {
+adminContext.describe('Admin Order Management', { tag: ['@api', '@orders', '@admin'] }, () => {
     adminContext.describe.configure({ mode: "serial" });
     let ordersAPI: OrderAPI;
     let productAPI: ProductAPI;
@@ -258,7 +258,7 @@ adminContext.describe('Admin Order Management', () => {
         productAPI = new ProductAPI(adminRequest);
     });
 
-    adminContext('should list all orders for admin', async () => {
+    adminContext('should list all orders for admin', { tag: '@sanity' }, async () => {
         const listResponse = await productAPI.list({ keyword: PRODUCT_NAME });
         const products = await listResponse.json();
         expect(products.products.length).toBeGreaterThan(0);
@@ -278,7 +278,7 @@ adminContext.describe('Admin Order Management', () => {
         expect(responseBody.length).toBeGreaterThan(0);
     });
 
-    adminContext('should retrieve mine orders for admin', async () => {
+    adminContext('should retrieve mine orders for admin', { tag: '@sanity' }, async () => {
         const response = await ordersAPI.getMine();
         expect(response.status()).toBe(200);
 
@@ -286,7 +286,7 @@ adminContext.describe('Admin Order Management', () => {
         expect(Array.isArray(responseBody)).toBe(true);
     });
 
-    adminContext('should retrieve an order by ID for admin', async () => {
+    adminContext('should retrieve an order by ID for admin', { tag: '@sanity' }, async () => {
         const response = await ordersAPI.getById(orderId);
         expect(response.status()).toBe(200);
 
@@ -294,7 +294,7 @@ adminContext.describe('Admin Order Management', () => {
         expect(responseBody).toHaveProperty('_id', orderId);
     });
 
-    adminContext('should update order status for admin', async () => {
+    adminContext('should update order status for admin', { tag: '@sanity' }, async () => {
         const newStatus = { status: 'shipped' };
         const response = await ordersAPI.updateStatus(orderId, newStatus);
         expect(response.status()).toBe(200);
@@ -304,7 +304,7 @@ adminContext.describe('Admin Order Management', () => {
         expect(responseBody).toHaveProperty('status', newStatus.status);
     });
 
-    adminContext('should remove an order for admin', async () => {
+    adminContext('should remove an order for admin', { tag: '@sanity' }, async () => {
         const response = await ordersAPI.remove(orderId);
         expect(response.status()).toBe(200);
 
@@ -316,7 +316,7 @@ adminContext.describe('Admin Order Management', () => {
     });
 });
 
-userContext.describe('Order Ownership', () => {
+userContext.describe('Order Ownership', { tag: ['@api', '@orders'] }, () => {
     async function createOrderWith(context: APIRequestContext): Promise<string> {
         const productAPI = new ProductAPI(context);
         const listResponse = await productAPI.list({ keyword: PRODUCT_NAME });
@@ -371,7 +371,7 @@ userContext.describe('Order Ownership', () => {
     });
 });
 
-test.describe('Order API - Unauthorized Access', () => {
+test.describe('Order API - Unauthorized Access', { tag: ['@api', '@orders'] }, () => {
     let ordersAPI: OrderAPI;
 
     test.beforeEach(async ({ request }) => {

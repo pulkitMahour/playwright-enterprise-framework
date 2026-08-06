@@ -10,7 +10,7 @@ const SHIPPING_ADDRESS = {
     country: 'Canada',
 };
 
-test.describe('Checkout Page', () => {
+test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
     let page: Page;
     let checkoutPage: CheckoutPage;
 
@@ -35,14 +35,14 @@ test.describe('Checkout Page', () => {
         await expect(page).toHaveURL('/checkout');
     })
 
-    test('Filling values in the checkout form and verify summary', async () => {
+    test('Filling values in the checkout form and verify summary', { tag: '@sanity' }, async () => {
         await expect(checkoutPage.checkout_form).toBeVisible();
         await checkoutPage.fillShippingAddress(SHIPPING_ADDRESS);
         await expect(checkoutPage.payment_note).toHaveText('Mock payment — no card required. Your order is marked paid instantly.')
         await expect(checkoutPage.checkout_summary).toBeVisible();
     })
 
-    test('Verify summary math with shipping charges', async () => {
+    test('Verify summary math with shipping charges', { tag: '@sanity' }, async () => {
         const price = 44.99;
         const calculate = checkoutPage.calculation(price)
 
@@ -62,7 +62,7 @@ test.describe('Checkout Page', () => {
         await expect(checkoutPage.summary_total).toHaveText(`$${calculate.total}`)
     })
 
-    test('Place order verification', async () => {
+    test('Place order verification', { tag: '@smoke' }, async () => {
         await checkoutPage.fillShippingAddress(SHIPPING_ADDRESS);
         await checkoutPage.checkout_place_order.click();
 

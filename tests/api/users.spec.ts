@@ -24,14 +24,14 @@ async function registerFreshUser(context: APIRequestContext): Promise<FreshUser>
     return { ...(await response.json()), password };
 }
 
-test.describe('User Profile', () => {
+test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
 
     test.beforeEach(async ({ request }) => {
         userAPI = new UserAPI(request);
     });
 
-    test('should fetch user profile successfully', async ({ request }) => {
+    test('should fetch user profile successfully', { tag: '@sanity' }, async ({ request }) => {
         const user = await registerFreshUser(request);
 
         const response = await userAPI.me();
@@ -49,7 +49,7 @@ test.describe('User Profile', () => {
         expect(profile.isSeed).toBe(false);
     });
 
-    test('should update user profile successfully', async ({ request }) => {
+    test('should update user profile successfully', { tag: '@sanity' }, async ({ request }) => {
         const user = await registerFreshUser(request);
 
         const updateProfile = {
@@ -114,7 +114,7 @@ test.describe('User Profile', () => {
 
 });
 
-userContext.describe('Profile Update Validation', () => {
+userContext.describe('Profile Update Validation', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
 
     userContext.beforeEach(async ({ userRequest }) => {
@@ -163,7 +163,7 @@ userContext.describe('Profile Update Validation', () => {
     });
 });
 
-userContext.describe('Default User', () => {
+userContext.describe('Default User', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
 
     userContext.beforeEach(async ({ userRequest }) => {
@@ -186,7 +186,7 @@ userContext.describe('Default User', () => {
     })
 });
 
-adminContext.describe('Admin User Management', () => {
+adminContext.describe('Admin User Management', { tag: ['@api', '@profile', '@admin'] }, () => {
     adminContext.describe.configure({ mode: "serial" });
     let userAPI: UserAPI;
 
@@ -194,7 +194,7 @@ adminContext.describe('Admin User Management', () => {
         userAPI = new UserAPI(adminRequest);
     });
 
-    adminContext('should list all users for admin', async () => {
+    adminContext('should list all users for admin', { tag: '@sanity' }, async () => {
         const response = await userAPI.listAll();
         expect(response.status()).toBe(200);
 
@@ -203,7 +203,7 @@ adminContext.describe('Admin User Management', () => {
         expect(responseBody.length).toBeGreaterThan(0);
     });
 
-    adminContext('should list the stats for admin', async () => {
+    adminContext('should list the stats for admin', { tag: '@sanity' }, async () => {
         const response = await userAPI.stats();
         expect(response.status()).toBe(200);
 
@@ -214,7 +214,7 @@ adminContext.describe('Admin User Management', () => {
         expect(responseBody).toHaveProperty('revenue');
     });
 
-    adminContext('should remove a user for admin', async ({ request }) => {
+    adminContext('should remove a user for admin', { tag: '@sanity' }, async ({ request }) => {
         const { id: user_id } = await registerFreshUser(request);
 
         const response = await userAPI.remove(user_id);

@@ -14,7 +14,7 @@ const orderShipping = {
 
 const EXPECTED_ITEM = { price: 19.99, qty: 1 };
 
-test.describe('Order Page', () => {
+test.describe('Order Page', { tag: ['@orders'] }, () => {
     test.describe.configure({ mode: 'serial' })
     let page: Page;
     let orderPage: OrderPage;
@@ -40,7 +40,7 @@ test.describe('Order Page', () => {
         await expect(orderPage.orders_empty).toHaveText('You have no orders yet. Start shopping');
     });
 
-    test('Place an order and check in my orders list', async () => {
+    test('Place an order and check in my orders list', { tag: '@smoke' }, async () => {
         await orderPage.placeOrder(orderShipping);
         id = await orderPage.order_detail.getAttribute('data-order-id');
         if (!id) throw new Error('Order ID not found');
