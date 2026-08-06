@@ -12,11 +12,11 @@
     "test:smoke": "playwright test --grep @smoke",
     "test:sanity": "playwright test --grep \"@smoke|@sanity\"",
     "test:regression": "playwright test",
-    "test:api": "playwright test tests/api",
+    "test:api": "playwright test --project=api",
     "test:ui": "playwright test tests/ui",
     "test:admin": "playwright test --grep @admin",
     "test:checkout": "playwright test --grep @checkout",
-    "test:smoke:ci": "playwright test --grep @smoke --project=chromium"
+    "test:smoke:ci": "playwright test --grep @smoke --project=api --project=chromium"
   },
   "keywords": [],
   "author": "",

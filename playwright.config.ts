@@ -3,8 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '.env'), quiet: true });
 
-// Snap terminals (VS Code's) leak snap's GIO modules here; they load snap's old glibc into
-// WebKit's NetworkProcess and break every page.goto(). Chromium/Firefox unaffected.
+// Snap terminals (VS Code's) leak snap's GIO modules here; they load snap's old glibc into WebKit's NetworkProcess and break every page.goto(). Chromium/Firefox unaffected.
 delete process.env.GIO_MODULE_DIR;
 
 export default defineConfig({
@@ -21,15 +20,22 @@ export default defineConfig({
 
   projects: [
     {
+      name: 'api',
+      testDir: './tests/api',
+    },
+    {
       name: 'chromium',
+      testDir: './tests/ui',
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'firefox',
+      testDir: './tests/ui',
       use: { ...devices['Desktop Firefox'] },
     },
     {
       name: 'webkit',
+      testDir: './tests/ui',
       use: { ...devices['Desktop Safari'] },
     },
   ],
