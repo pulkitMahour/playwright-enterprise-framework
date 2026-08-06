@@ -13,7 +13,7 @@ type FreshUser = {
 };
 
 async function registerFreshUser(context: APIRequestContext): Promise<FreshUser> {
-    const stamp = `${Date.now()}2. Validation row khaali hai — PUT /users/me par name: 'A' (@MinLength(2)), password: '123' (@MinLength(6)), name: 123 → sab 400. Matrix ka validation cell users ke liye poora blank hai.`;
+    const stamp = `${Date.now()}-${test.info().workerIndex}`;
     const password = 'newuser123';
 
     const response = await new AuthAPI(context).register(
@@ -154,9 +154,9 @@ userContext.describe('Profile Update Validation', () => {
         const user = await registerFreshUser(request);
         const freshUserAPI = new UserAPI(request);
 
-        const response = await freshUserAPI.updateProfile({ name: 'Al', password: '123456' });
+        const response = await freshUserAPI.updateProfile({ name: 'Jo', password: '123456' });
         expect(response.status()).toBe(200);
-        expect((await response.json()).name).toBe('Al');
+        expect((await response.json()).name).toBe('Jo');
 
         const login = await new AuthAPI(request).login(user.email, '123456');
         expect(login.status()).toBe(200);

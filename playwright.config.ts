@@ -3,6 +3,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '.env'), quiet: true });
 
+// Snap terminals (VS Code's) leak snap's GIO modules here; they load snap's old glibc into
+// WebKit's NetworkProcess and break every page.goto(). Chromium/Firefox unaffected.
+delete process.env.GIO_MODULE_DIR;
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -19,6 +23,14 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
     },
   ],
 
