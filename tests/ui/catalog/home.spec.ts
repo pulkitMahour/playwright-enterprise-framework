@@ -86,3 +86,57 @@ test.describe('Home Page', { tag: ['@catalog'] }, () => {
         await expect(page).toHaveURL('/?category=Gaming');
     })
 })
+
+test.describe('Home Page Network Failures', { tag: ['@catalog'] }, () => {
+    let homePage: HomePage;
+
+    test.beforeEach(async ({ page }) => {
+        homePage = new HomePage(page);
+    })
+
+    test('Should display empty state when products API return 500', async ({ page }) => {
+        await page.route((url) => url.pathname === '/api/products', async (route) => {
+            await route.fulfill({
+                status: 500,
+                contentType: 'application/json',
+                body: JSON.stringify({ error: 'Internal Server Error' })
+            });
+        });
+        await homePage.gotoHomePage();
+
+        await expect(homePage.empty_state).toHaveText('No products found.');
+        await expect(homePage.product_card).toHaveCount(0);
+    });
+
+    test('Should show loading spinner when product API is delayed', async ({ page }) => {
+        await page.route((url) => url.pathname === '/api/products', async (route) => {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ products: [], page: 1, pages: 1, total: 0 }),
+            });
+        });
+        await homePage.gotoHomePage();
+
+        await expect(homePage.loading_state).toBeVisible();
+        await expect(homePage.product_card).toHaveCount(0);
+        await expect(homePage.loading_state).toBeHidden();
+    });
+
+    test('Should keep products grid working even if categories API fails with 500', async ({ page }) => {
+        await page.route((url) => url.pathname === '/api/products/categories', async (route) => {
+            await route.fulfill({
+                status: 500,
+                contentType: 'application/json',
+                body: JSON.stringify({ error: 'Categories Fetch Failed' }),
+            });
+        });
+        await homePage.gotoHomePage();
+
+        await expect(homePage.product_card.first()).toBeVisible();
+        expect(await homePage.product_card.count()).toBeGreaterThan(0);
+
+        await expect(homePage.category_filter.locator('option')).toHaveText(['All categories']);
+    });
+});

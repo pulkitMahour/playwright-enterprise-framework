@@ -52,3 +52,28 @@ test.describe('Product Page', { tag: ['@catalog'] }, () => {
         await expect(productPage.nav_cart_count).toHaveText('1')
     })
 });
+
+test.describe('Product Detail Page - Error Handling', { tag: ['@catalog'] }, () => {
+    test('Should display not-found state and hide add-to-cart button when product API returns 500', async ({ page }) => {
+        const productPage = new ProductPage(page);
+        await productPage.goto('/');
+        await productPage.searchProduct('Vortex Mechanical Keyboard');
+        const product = productPage.product_card_title.filter({ hasText: "Vortex Mechanical Keyboard" })
+        const href = await product.getAttribute('href');
+
+        const id = href!.split('/').pop();
+        await page.route((url) => url.pathname === `/api/products/${id}`, async (route) => {
+            await route.fulfill({
+                status: 500,
+                contentType: 'application/json',
+                body: JSON.stringify({ error: 'Product details could not be fetched' }),
+            });
+        });
+
+        await product.click();
+
+        await expect(productPage.empty_state).toHaveText('Product not found.');
+        await expect(productPage.product_detail).toBeHidden();
+        await expect(productPage.add_to_cart_button).toBeHidden();
+    });
+});

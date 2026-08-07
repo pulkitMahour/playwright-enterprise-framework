@@ -111,3 +111,42 @@ newRegister.describe('Profile Page New User', { tag: ['@sanity', '@profile'] }, 
         await expect(login.navbar_name).toHaveText(updated_profile.fullName)
     })
 })
+
+test.describe('Profile Page - Update Error Handling', { tag: ['@profile'] }, () => {
+    let page: Page;
+    let profilePage: ProfilePage;
+
+    test.beforeEach(async ({ userContext }) => {
+        page = await userContext.newPage();
+        await page.goto('/');
+        await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
+
+        profilePage = new ProfilePage(page);
+        await profilePage.nav_profile.click();
+        await expect(page).toHaveURL('/profile');
+        await expect(profilePage.profile_form).toBeVisible();
+    });
+
+    test.afterEach(async () => {
+        await page.close();
+    });
+
+    test('Should display profile-error fallback message when PUT /api/users/me returns 500 with empty body', async () => {
+        await page.route((url) => url.pathname === '/api/users/me', async (route) => {
+            await route.fulfill({
+                status: 500,
+                contentType: 'application/json',
+                body: JSON.stringify({}),
+            });
+        });
+
+        await profilePage.profile_name.fill('Network Failure Test');
+        await profilePage.profile_save.click();
+
+        await expect(profilePage.profile_error).toHaveText('Update failed');
+
+        await expect(page).toHaveURL('/profile');
+        await expect(profilePage.profile_name).toHaveValue('Network Failure Test');
+        await expect(profilePage.profile_save).toBeEnabled();
+    });
+});

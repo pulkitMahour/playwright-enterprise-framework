@@ -90,3 +90,69 @@ test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
         await expect(page).toHaveURL('/checkout');
     })
 });
+
+test.describe('Checkout Page - Order Failures', { tag: ['@checkout'] }, () => {
+    let page: Page;
+    let checkoutPage: CheckoutPage;
+
+    test.beforeEach(async ({ authenticatedContext }) => {
+        page = await authenticatedContext.newPage();
+        await page.addInitScript(() => localStorage.removeItem('testmart_cart'));
+        await page.goto('/');
+        await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
+
+        checkoutPage = new CheckoutPage(page);
+        await checkoutPage.addToCart(DEFAULT_CART_PRODUCT);
+        await checkoutPage.goToCart();
+        await checkoutPage.cart_checkout.click();
+        await expect(page).toHaveURL('/checkout');
+        await checkoutPage.fillShippingAddress(DEFAULT_SHIPPING_ADDRESS);
+    });
+
+    test.afterEach(async () => {
+        await page.close();
+    });
+
+    async function failPlaceOrder(fulfill: { status: number; body: string } | 'abort') {
+        await page.route((url) => url.pathname === '/api/orders', async (route) => {
+            if (route.request().method() !== 'POST') return route.continue();
+            if (fulfill === 'abort') return route.abort('failed');
+            await route.fulfill({
+                status: fulfill.status,
+                contentType: 'application/json',
+                body: fulfill.body,
+            });
+        });
+    }
+
+    test('Should show the fallback error when placing an order fails with no message', async () => {
+        await failPlaceOrder({ status: 500, body: JSON.stringify({}) });
+
+        await checkoutPage.checkout_place_order.click();
+
+        await expect(checkoutPage.checkout_error).toHaveText('Could not place order');
+        await expect(page).toHaveURL('/checkout');
+    });
+
+    test('Should surface the server message and keep the cart when placing an order fails', async () => {
+        await failPlaceOrder({ status: 500, body: JSON.stringify({ message: 'Out of stock' }) });
+
+        await checkoutPage.checkout_place_order.click();
+
+        await expect(checkoutPage.checkout_error).toHaveText('Out of stock');
+
+        await expect(page).toHaveURL('/checkout');
+        await expect(checkoutPage.nav_cart_count).toHaveText('1');
+        await expect(checkoutPage.checkout_place_order).toBeEnabled();
+    });
+
+    test('Should show the fallback error when the order request fails at the network level', async () => {
+        await failPlaceOrder('abort');
+
+        await checkoutPage.checkout_place_order.click();
+
+        await expect(checkoutPage.checkout_error).toHaveText('Could not place order');
+        await expect(page).toHaveURL('/checkout');
+        await expect(checkoutPage.nav_cart_count).toHaveText('1');
+    });
+});

@@ -1,5 +1,6 @@
 import { type Page } from '@playwright/test';
 import { test, expect } from '../../../fixtures/auth.fixture';
+import { test as userSession } from '../../../fixtures/base.fixture';
 import { OrderPage } from '../../../pages/OrderPage';
 import { CheckoutPage } from '../../../pages/CheckoutPage';
 
@@ -73,5 +74,43 @@ test.describe('Order Page', { tag: ['@orders'] }, () => {
         await expect(orderPage.order_shipping).toContainText(orderShipping.city);
         await expect(orderPage.order_shipping).toContainText(orderShipping.postalCode);
         await expect(orderPage.order_shipping).toContainText(orderShipping.country);
+    });
+});
+
+
+userSession.describe('Order Page - Network Failures', { tag: ['@orders'] }, () => {
+    let page: Page;
+    let orderPage: OrderPage;
+
+    userSession.beforeEach(async ({ userContext }) => {
+        page = await userContext.newPage();
+        await page.addInitScript(() => localStorage.removeItem('testmart_cart'));
+        await page.goto('/');
+        await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
+
+        orderPage = new OrderPage(page);
+        await orderPage.placeOrder(orderShipping);
+    });
+
+    userSession.afterEach(async () => {
+        await page.close();
+    });
+
+    userSession('Should display the empty state when the orders API returns 500', async () => {
+        await page.route((url) => url.pathname === '/api/orders/mine', async (route) => {
+            await route.fulfill({
+                status: 500,
+                contentType: 'application/json',
+                body: JSON.stringify({ error: 'Internal Server Error' }),
+            });
+        });
+
+        await orderPage.nav_orders.click();
+        await expect(orderPage.orders_empty).toHaveText('You have no orders yet. Start shopping');
+        await expect(orderPage.orders_table).toBeHidden();
+
+        await page.unrouteAll({ behavior: 'ignoreErrors' });
+        await page.reload();
+        await expect(orderPage.orders_table).toBeVisible();
     });
 });
