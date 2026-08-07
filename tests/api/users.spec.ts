@@ -2,6 +2,7 @@ import { test, expect, APIRequestContext } from '@playwright/test';
 import { test as adminContext, test as userContext } from '../../fixtures/api.fixture';
 import { UserAPI } from '../../api/UserAPI';
 import { AuthAPI } from '../../api/AuthAPI';
+import { INVALID_PROFILE_UPDATES } from '../../data/users';
 
 type FreshUser = {
     id: string;
@@ -121,17 +122,7 @@ userContext.describe('Profile Update Validation', { tag: ['@api', '@profile'] },
         userAPI = new UserAPI(userRequest);
     });
 
-    const invalidUpdates: Array<{ label: string; payload: unknown }> = [
-        { label: 'a name shorter than 2 chars', payload: { name: 'A' } },
-        { label: 'an empty name', payload: { name: '' } },
-        { label: 'a non-string name', payload: { name: 123 } },
-        { label: 'a password shorter than 6 chars', payload: { password: '123' } },
-        { label: 'a non-string password', payload: { password: 123456 } },
-        { label: 'an address that is not an object', payload: { address: 'Springfield' } },
-        { label: 'a non-string address field', payload: { address: { city: 123 } } },
-    ];
-
-    for (const { label, payload } of invalidUpdates) {
+    for (const { label, payload } of INVALID_PROFILE_UPDATES) {
         userContext(`profile update should reject ${label}`, async () => {
             const response = await userAPI.updateProfileRaw(payload);
             expect(response.status()).toBe(400);

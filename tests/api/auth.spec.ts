@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { AuthAPI } from '../../api/AuthAPI';
+import { INVALID_LOGINS, INVALID_REGISTRATIONS } from '../../data/auth';
 
 test.describe('Auth Login/Logout', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
@@ -72,38 +73,14 @@ test.describe('Auth Validation', { tag: ['@api', '@auth'] }, () => {
         authAPI = new AuthAPI(request);
     });
 
-    const invalidLogins: Array<{ label: string; payload: unknown }> = [
-        { label: 'an empty body', payload: {} },
-        { label: 'a missing password', payload: { email: 'user@demo.com' } },
-        { label: 'a missing email', payload: { password: 'user123' } },
-        { label: 'a malformed email', payload: { email: 'not-an-email', password: 'user123' } },
-        { label: 'a non-string password', payload: { email: 'user@demo.com', password: 12345 } },
-    ];
-
-    for (const { label, payload } of invalidLogins) {
+    for (const { label, payload } of INVALID_LOGINS) {
         test(`login should reject ${label}`, async () => {
             const response = await authAPI.loginRaw(payload);
             expect(response.status()).toBe(400);
         });
     }
 
-    const invalidRegistrations: Array<{ label: string; payload: unknown }> = [
-        { label: 'an empty body', payload: {} },
-        {
-            label: 'a name shorter than 2 chars',
-            payload: { name: 'A', email: `short${Date.now()}@demo.com`, password: 'user123' },
-        },
-        {
-            label: 'a password shorter than 6 chars',
-            payload: { name: 'Short Password', email: `pw${Date.now()}@demo.com`, password: '123' },
-        },
-        {
-            label: 'a malformed email',
-            payload: { name: 'Bad Email', email: 'not-an-email', password: 'user123' },
-        },
-    ];
-
-    for (const { label, payload } of invalidRegistrations) {
+    for (const { label, payload } of INVALID_REGISTRATIONS) {
         test(`register should reject ${label}`, async () => {
             const response = await authAPI.registerRaw(payload);
             expect(response.status()).toBe(400);

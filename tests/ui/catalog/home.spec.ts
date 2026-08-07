@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { HomePage } from '../../../pages/HomePage';
+import { SEARCH_CASES, EMPTY_SEARCH_CASES } from '../../../data/search';
 
 
 test.describe('Home Page', { tag: ['@catalog'] }, () => {
@@ -16,18 +17,26 @@ test.describe('Home Page', { tag: ['@catalog'] }, () => {
         expect(productCount).toBeGreaterThan(0);
     })
 
-    test('Search for a product', { tag: '@sanity' }, async () => {
-        await homePage.search.fill('Bass Drop Earbuds');
-        await homePage.search_submit.click();
-        await expect(homePage.product_card).toHaveCount(1);
-    })
+    for (const { label, keyword, expectedNames } of SEARCH_CASES) {
+        test(`Search matches ${label}`, { tag: '@sanity' }, async () => {
+            await homePage.search.fill(keyword);
+            await homePage.search_submit.click();
 
-    test('Search for a non-existent product', async () => {
-        await homePage.search.fill('NonExistentProduct');
-        await homePage.search_submit.click();
-        await expect(homePage.product_card).toHaveCount(0);
-        await expect(homePage.empty_state).toHaveText('No products found.');
-    })
+            for (const name of expectedNames) {
+                await expect(homePage.product_card.filter({ hasText: name })).toBeVisible();
+            }
+            await expect(homePage.product_card).not.toHaveCount(0);
+        })
+    }
+
+    for (const { label, keyword } of EMPTY_SEARCH_CASES) {
+        test(`Search finds nothing for ${label}`, async () => {
+            await homePage.search.fill(keyword);
+            await homePage.search_submit.click();
+            await expect(homePage.product_card).toHaveCount(0);
+            await expect(homePage.empty_state).toHaveText('No products found.');
+        })
+    }
 
     test('Filter by category', { tag: '@sanity' }, async () => {
         await homePage.category_filter.selectOption('Gaming');

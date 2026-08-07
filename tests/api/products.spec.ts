@@ -1,16 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { ProductAPI } from '../../api/ProductAPI';
 import { test as adminContext, test as userContext } from '../../fixtures/api.fixture';
-
-function validProduct() {
-    return {
-        name: `Test Product ${Date.now()}`,
-        description: 'This is a test product',
-        price: 99.99,
-        category: 'Electronics',
-        countInStock: 10,
-    };
-}
+import { PRODUCT_CREATE_CASES, validProduct } from '../../data/products';
+import { SEARCH_CASES, EMPTY_SEARCH_CASES } from '../../data/search';
 
 test.describe('Product Query Tests', { tag: ['@api', '@catalog'] }, () => {
     let productAPI: ProductAPI;
@@ -26,26 +18,29 @@ test.describe('Product Query Tests', { tag: ['@api', '@catalog'] }, () => {
         expect(Array.isArray(products.products)).toBe(true);
     });
 
-    test('Product Query: product keyword search should return relevant products', { tag: '@sanity' }, async () => {
-        const keyword = 'laptop';
-        const response = await productAPI.list({ keyword });
-        expect(response.status()).toBe(200);
-        const products = await response.json();
-        expect(Array.isArray(products.products)).toBe(true);
-        expect(products.products.length).toBeGreaterThan(0);
-        for (const product of products.products) {
-            expect(product.name.toLowerCase()).toContain(keyword);
-        }
-    });
+    for (const { label, keyword, expectedNames } of SEARCH_CASES) {
+        test(`Product Query: keyword search matches ${label}`, { tag: '@sanity' }, async () => {
+            const response = await productAPI.list({ keyword, limit: 100 });
+            expect(response.status()).toBe(200);
+            const { products } = await response.json();
 
-    test('Product Query: invalid product search should return empty results', async () => {
-        const keyword = 'non existent product';
-        const response = await productAPI.list({ keyword });
-        expect(response.status()).toBe(200);
-        const products = await response.json();
-        expect(Array.isArray(products.products)).toBe(true);
-        expect(products.products.length).toBe(0);
-    });
+            const names: string[] = products.map((product: { name: string }) => product.name);
+            expect(names).toEqual(expect.arrayContaining([...expectedNames]));
+
+            for (const name of names) {
+                expect(name.toLowerCase()).toContain(keyword.toLowerCase());
+            }
+        });
+    }
+
+    for (const { label, keyword } of EMPTY_SEARCH_CASES) {
+        test(`Product Query: keyword search finds nothing for ${label}`, async () => {
+            const response = await productAPI.list({ keyword, limit: 100 });
+            expect(response.status()).toBe(200);
+            const { products } = await response.json();
+            expect(products).toEqual([]);
+        });
+    }
 
     test('Product Query: product category filter should return relevant products', { tag: '@sanity' }, async () => {
         const category = 'Electronics';
@@ -143,13 +138,7 @@ adminContext.describe('Product Management Tests', { tag: ['@api', '@catalog', '@
     });
 
     adminContext('should create a new product', { tag: '@sanity' }, async () => {
-        const newProduct = {
-            name: `Test Product ${Date.now()}`,
-            description: 'This is a test product',
-            price: 99.99,
-            category: 'Electronics',
-            countInStock: 10,
-        };
+        const newProduct = validProduct();
         const response = await productAPI.create(newProduct);
         expect(response.status()).toBe(201);
         const createdProduct = await response.json();
@@ -177,43 +166,16 @@ adminContext.describe('Product Management Tests', { tag: ['@api', '@catalog', '@
         expect(getResponse.status()).toBe(404);
     });
 
-    const invalidPayloads: Array<{ label: string; payload: Record<string, unknown> }> = [
-        { label: 'empty body', payload: {} },
-        {
-            label: 'missing countInStock',
-            payload: { name: 'No Stock Field', price: 10, category: 'Electronics' },
-        },
-        {
-            label: 'name shorter than 2 chars',
-            payload: { name: 'A', price: 10, category: 'Electronics', countInStock: 1 },
-        },
-        {
-            label: 'negative price',
-            payload: { name: 'Negative Price', price: -1, category: 'Electronics', countInStock: 1 },
-        },
-        {
-            label: 'negative countInStock',
-            payload: { name: 'Negative Stock', price: 10, category: 'Electronics', countInStock: -1 },
-        },
-        {
-            label: 'rating above the max of 5',
-            payload: {
-                name: 'Overrated', price: 10, category: 'Electronics', countInStock: 1, rating: 6,
-            },
-        },
-        {
-            label: 'price sent as a string',
-            payload: { name: 'String Price', price: '10', category: 'Electronics', countInStock: 1 },
-        },
-    ];
+});
 
-    for (const { label, payload } of invalidPayloads) {
-        adminContext(`create should reject ${label}`, async () => {
+adminContext.describe('Product Create Validation', { tag: ['@api', '@catalog', '@admin'] }, () => {
+    for (const { label, payload } of PRODUCT_CREATE_CASES) {
+        adminContext(`create should reject ${label}`, async ({ adminRequest }) => {
+            const productAPI = new ProductAPI(adminRequest);
             const response = await productAPI.create(payload);
             expect(response.status()).toBe(400);
         });
     }
-
 });
 
 test.describe('Product Management Tests (unauthenticated)', { tag: ['@api', '@catalog'] }, () => {
