@@ -7,6 +7,13 @@ dotenv.config({ path: path.resolve(__dirname, '.env'), quiet: true });
 delete process.env.GIO_MODULE_DIR;
 
 export default defineConfig({
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.002,
+      animations: 'disabled',
+      caret: 'hide',
+    },
+  },
   testDir: './tests',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -32,11 +39,13 @@ export default defineConfig({
       name: 'firefox',
       testDir: './tests/ui',
       use: { ...devices['Desktop Firefox'] },
+      testIgnore: '**/visual/**',
     },
     {
       name: 'webkit',
       testDir: './tests/ui',
       use: { ...devices['Desktop Safari'] },
+      testIgnore: '**/visual/**',
     },
   ],
 
