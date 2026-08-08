@@ -1,8 +1,6 @@
 name: Playwright
 
 on:
-  # Every branch, no `branches:` filter — feature-branch pushes are the only pre-merge
-  # signal, and `pull_request:` is left off so an open PR does not run the same commit twice.
   push:
   # schedule:
   #   # nightly smoke against the deployed app
@@ -81,10 +79,8 @@ jobs:
           cat "${GITHUB_WORKSPACE}/testmart.log"
           exit 1
 
-      # firefox and webkit are deliberately left out for now — add them here once this job
-      # is proven stable. Visual tests live in the chromium project.
       - name: Run tests
-        run: npx playwright test --project=api --project=chromium
+        run: npx playwright test
 
       - name: Upload Playwright report
         if: always()
