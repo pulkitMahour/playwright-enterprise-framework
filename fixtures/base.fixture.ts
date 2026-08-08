@@ -1,5 +1,6 @@
-import { test as base, Browser, BrowserContext } from '@playwright/test';
+import { test as base, APIRequestContext, Browser, BrowserContext } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
+import { adminApiFixture, credentialsFor } from './testData';
 // import fs from 'fs';
 // import path from 'path';
 
@@ -15,19 +16,6 @@ function resolveRole(): TestRole {
         );
     }
     return raw as TestRole;
-}
-
-export function credentialsFor(role: TestRole) {
-    const prefix = role.toUpperCase();
-    const email = process.env[`${prefix}_EMAIL`];
-    const password = process.env[`${prefix}_PASSWORD`];
-
-    if (!email || !password) {
-        throw new Error(
-            `Missing ${prefix}_EMAIL / ${prefix}_PASSWORD. Copy .env.example to .env and fill them in.`
-        );
-    }
-    return { email, password };
 }
 
 export const testRole: TestRole = resolveRole();
@@ -56,12 +44,15 @@ export const test = base.extend<object, {
     authenticatedContext: BrowserContext;
     adminContext: BrowserContext;
     userContext: BrowserContext;
+    adminApi: APIRequestContext;
 }>({
     authenticatedContext: [contextForRole(testRole), { scope: 'worker' }],
 
     adminContext: [contextForRole('admin'), { scope: 'worker' }],
 
     userContext: [contextForRole('user'), { scope: 'worker' }],
+
+    adminApi: [adminApiFixture, { scope: 'worker' }],
 });
 
 

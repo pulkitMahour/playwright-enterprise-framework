@@ -3,16 +3,26 @@ import { test, expect } from '../../../fixtures/base.fixture';
 import { CheckoutPage } from '../../../pages/CheckoutPage';
 import { CHECKOUT_SUMMARY_CASES, DEFAULT_CART_PRODUCT } from '../../../data/shipping';
 import { UI_ADDRESS_CASES, DEFAULT_SHIPPING_ADDRESS } from '../../../data/addresses';
+import { createProduct, deleteProduct, deleteOrders, TestProduct } from '../../../fixtures/testData';
 
 test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
     let page: Page;
     let checkoutPage: CheckoutPage;
+    let orderProduct: TestProduct;
+    const createdOrders: string[] = [];
 
-    test.beforeAll(async ({ authenticatedContext }) => {
+    test.beforeAll(async ({ authenticatedContext, adminApi }) => {
+        orderProduct = await createProduct(adminApi);
+
         page = await authenticatedContext.newPage();
         await page.addInitScript(() => localStorage.removeItem('testmart_cart'));
         await page.goto('/');
         await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
+    })
+
+    test.afterAll(async ({ adminApi }) => {
+        await deleteOrders(adminApi, createdOrders);
+        await deleteProduct(adminApi, orderProduct._id);
     })
 
     test.beforeEach(async () => {
@@ -67,17 +77,17 @@ test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
     }
 
     test('Place order verification', { tag: '@smoke' }, async () => {
-        await checkoutWith(DEFAULT_CART_PRODUCT);
+        await checkoutWith(orderProduct.name);
 
         await checkoutPage.fillShippingAddress(DEFAULT_SHIPPING_ADDRESS);
         await checkoutPage.checkout_place_order.click();
 
         await expect(page).toHaveURL(/\/orders\/[a-f0-9]{24}$/);
         await expect(checkoutPage.order_detail).toBeVisible();
-        await expect(checkoutPage.order_detail).toHaveAttribute(
-            'data-order-id',
-            page.url().split('/').pop()!
-        );
+
+        const orderId = page.url().split('/').pop()!;
+        createdOrders.push(orderId);
+        await expect(checkoutPage.order_detail).toHaveAttribute('data-order-id', orderId);
         await expect(checkoutPage.nav_cart_count).toBeHidden();
     })
 

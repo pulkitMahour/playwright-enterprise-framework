@@ -1,8 +1,9 @@
-import { test, expect, APIRequestContext } from '@playwright/test';
-import { test as adminContext, test as userContext } from '../../fixtures/api.fixture';
+import { expect, APIRequestContext } from '@playwright/test';
+import { test, test as adminContext, test as userContext } from '../../fixtures/api.fixture';
 import { UserAPI } from '../../api/UserAPI';
 import { AuthAPI } from '../../api/AuthAPI';
 import { INVALID_PROFILE_UPDATES } from '../../data/users';
+import { deleteUsers } from '../../fixtures/testData';
 
 type FreshUser = {
     id: string;
@@ -27,13 +28,19 @@ async function registerFreshUser(context: APIRequestContext): Promise<FreshUser>
 
 test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
+    const createdUsers: string[] = [];
 
     test.beforeEach(async ({ request }) => {
         userAPI = new UserAPI(request);
     });
 
+    test.afterAll(async ({ adminApi }) => {
+        await deleteUsers(adminApi, createdUsers);
+    });
+
     test('should fetch user profile successfully', { tag: '@sanity' }, async ({ request }) => {
         const user = await registerFreshUser(request);
+        createdUsers.push(user.id);
 
         const response = await userAPI.me();
         expect(response.status()).toBe(200);
@@ -52,6 +59,7 @@ test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
 
     test('should update user profile successfully', { tag: '@sanity' }, async ({ request }) => {
         const user = await registerFreshUser(request);
+        createdUsers.push(user.id);
 
         const updateProfile = {
             name: `Updated ${user.name}`,
@@ -79,6 +87,7 @@ test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
 
     test('should merge address fields instead of replacing the block', async ({ request }) => {
         const user = await registerFreshUser(request);
+        createdUsers.push(user.id);
 
         const first = await userAPI.updateProfile({
             address: { city: 'Springfield', country: 'USA' },
@@ -100,7 +109,6 @@ test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
     });
 
     test('unauthenticated access to admin list, stats and delete should be 401', async () => {
-        // The id is never reached — the auth guard rejects before the handler looks it up — so this test needs no real user to exist.
         const someUserId = '6'.repeat(24);
 
         const listAll = await userAPI.listAll();
@@ -117,9 +125,14 @@ test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
 
 userContext.describe('Profile Update Validation', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
+    const createdUsers: string[] = [];
 
     userContext.beforeEach(async ({ userRequest }) => {
         userAPI = new UserAPI(userRequest);
+    });
+
+    userContext.afterAll(async ({ adminApi }) => {
+        await deleteUsers(adminApi, createdUsers);
     });
 
     for (const { label, payload } of INVALID_PROFILE_UPDATES) {
@@ -143,6 +156,7 @@ userContext.describe('Profile Update Validation', { tag: ['@api', '@profile'] },
 
     userContext('profile update should accept the shortest allowed values', async ({ request }) => {
         const user = await registerFreshUser(request);
+        createdUsers.push(user.id);
         const freshUserAPI = new UserAPI(request);
 
         const response = await freshUserAPI.updateProfile({ name: 'Jo', password: '123456' });
@@ -180,9 +194,14 @@ userContext.describe('Default User', { tag: ['@api', '@profile'] }, () => {
 adminContext.describe('Admin User Management', { tag: ['@api', '@profile', '@admin'] }, () => {
     adminContext.describe.configure({ mode: "serial" });
     let userAPI: UserAPI;
+    const createdUsers: string[] = [];
 
     adminContext.beforeEach(async ({ adminRequest }) => {
         userAPI = new UserAPI(adminRequest);
+    });
+
+    adminContext.afterAll(async ({ adminApi }) => {
+        await deleteUsers(adminApi, createdUsers);
     });
 
     adminContext('should list all users for admin', { tag: '@sanity' }, async () => {
@@ -207,6 +226,7 @@ adminContext.describe('Admin User Management', { tag: ['@api', '@profile', '@adm
 
     adminContext('should remove a user for admin', { tag: '@sanity' }, async ({ request }) => {
         const { id: user_id } = await registerFreshUser(request);
+        createdUsers.push(user_id);
 
         const response = await userAPI.remove(user_id);
         expect(response.status()).toBe(200);

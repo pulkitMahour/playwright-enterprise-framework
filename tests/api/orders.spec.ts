@@ -5,6 +5,7 @@ import { ProductAPI } from '../../api/ProductAPI';
 import { AuthAPI } from '../../api/AuthAPI';
 import { SHIPPING_CASES } from '../../data/shipping';
 import { ADDRESS_CASES } from '../../data/addresses';
+import { createProduct, deleteProduct, deleteOrders, deleteUsers, TestProduct } from '../../fixtures/testData';
 
 function calculation(price: number): { tax: string; shipping: string; total: string } {
     const taxNum = Math.round(price * 0.1 * 100) / 100;
@@ -17,8 +18,6 @@ function calculation(price: number): { tax: string; shipping: string; total: str
         total: totalNum.toFixed(2)
     };
 }
-
-const PRODUCT_NAME = 'Vortex Mechanical Keyboard';
 
 const shippingAddress: ShippingAddress = {
     fullName: 'John Doe',
@@ -43,16 +42,25 @@ userContext.describe('Placing Orders', { tag: ['@api', '@orders'] }, () => {
     let orderId = '';
     let productId = '';
     let existingStock = 0;
+    let product: TestProduct;
+    const createdOrders: string[] = [];
+
+    userContext.beforeAll(async ({ adminApi }) => {
+        product = await createProduct(adminApi);
+    });
+
+    userContext.afterAll(async ({ adminApi }) => {
+        await deleteOrders(adminApi, createdOrders);
+        await deleteProduct(adminApi, product._id);
+    });
 
     userContext.beforeEach(async ({ userRequest }) => {
         ordersAPI = new OrderAPI(userRequest);
         productAPI = new ProductAPI(userRequest);
+        productId = product._id;
 
-        const listResponse = await productAPI.list({ keyword: PRODUCT_NAME });
-        const products = await listResponse.json();
-        expect(products.products.length).toBeGreaterThan(0);
-        productId = products.products[0]._id;
-        existingStock = products.products[0].countInStock;
+        const response = await productAPI.getById(productId);
+        existingStock = (await response.json()).countInStock;
     });
 
     userContext('should create an order successfully', { tag: '@smoke' }, async () => {
@@ -65,6 +73,7 @@ userContext.describe('Placing Orders', { tag: ['@api', '@orders'] }, () => {
         expect(responseBody).toHaveProperty('status', 'processing');
         expect(responseBody.orderItems).toHaveLength(1);
         orderId = responseBody._id;
+        createdOrders.push(orderId);
 
         const listResponse = await productAPI.getById(productId);
         const productDetails = await listResponse.json();
@@ -143,50 +152,51 @@ userContext.describe('Placing Orders', { tag: ['@api', '@orders'] }, () => {
 
 userContext.describe('Tax and Shipping Calculation', { tag: ['@api', '@orders'] }, () => {
     let ordersAPI: OrderAPI;
-    let productAPI: ProductAPI;
+    let product: TestProduct;
+    const createdOrders: string[] = [];
+
+    userContext.beforeAll(async ({ adminApi }) => {
+        product = await createProduct(adminApi);
+    });
+
+    userContext.afterAll(async ({ adminApi }) => {
+        await deleteOrders(adminApi, createdOrders);
+        await deleteProduct(adminApi, product._id);
+    });
 
     userContext.beforeEach(async ({ userRequest }) => {
         ordersAPI = new OrderAPI(userRequest);
-        productAPI = new ProductAPI(userRequest);
     });
 
     for (const boundary of SHIPPING_CASES) {
-        userContext(`order totals with a subtotal ${boundary.label}`, async ({ adminRequest }) => {
-            const adminProductAPI = new ProductAPI(adminRequest);
-            const createResponse = await adminProductAPI.create({
-                name: `Shipping Case ${boundary.price} ${Date.now()}`,
+        userContext(`order totals with a subtotal ${boundary.label}`, async ({ adminApi }) => {
+            // This case needs an exact price, so it makes its own product instead of the shared one.
+            const boundaryProduct = await createProduct(adminApi, {
                 description: 'Priced to land on a free-shipping boundary',
                 price: boundary.price,
-                category: 'Electronics',
                 countInStock: 5,
             });
-            expect(createResponse.status()).toBe(201);
-            const product = await createResponse.json();
-            expect(product.price).toBe(boundary.price);
+            expect(boundaryProduct.price).toBe(boundary.price);
 
             try {
                 const response = await ordersAPI.create(
-                    makeOrderData({ product: product._id, qty: 1 }),
+                    makeOrderData({ product: boundaryProduct._id, qty: 1 }),
                 );
                 expect(response.status()).toBe(201);
 
                 const order = await response.json();
+                createdOrders.push(order._id);
                 expect(order.itemsPrice).toBe(boundary.price);
                 expect(order.taxPrice).toBe(boundary.expectedTax);
                 expect(order.shippingPrice).toBe(boundary.expectedShipping);
                 expect(order.totalPrice).toBe(boundary.expectedTotal);
             } finally {
-                await adminProductAPI.remove(product._id);
+                await deleteProduct(adminApi, boundaryProduct._id);
             }
         });
     }
 
     userContext('server should ignore client-supplied prices and names', async () => {
-        const listResponse = await productAPI.list({ keyword: PRODUCT_NAME });
-        const products = await listResponse.json();
-        expect(products.products.length).toBeGreaterThan(0);
-        const product = products.products[0];
-
         const qty = 2;
         const response = await ordersAPI.create(
             makeOrderData({ product: product._id, qty, price: 1, name: 'Free Keyboard Please' }),
@@ -194,6 +204,7 @@ userContext.describe('Tax and Shipping Calculation', { tag: ['@api', '@orders'] 
         expect(response.status()).toBe(201);
 
         const responseBody = await response.json();
+        createdOrders.push(responseBody._id);
         const expectedItemsPrice = Math.round(product.price * qty * 100) / 100;
 
         expect(responseBody.orderItems[0].price).toBe(product.price);
@@ -211,25 +222,31 @@ userContext.describe('Tax and Shipping Calculation', { tag: ['@api', '@orders'] 
 adminContext.describe('Admin Order Management', { tag: ['@api', '@orders', '@admin'] }, () => {
     adminContext.describe.configure({ mode: "serial" });
     let ordersAPI: OrderAPI;
-    let productAPI: ProductAPI;
     let orderId = '';
+    let product: TestProduct;
+    const createdOrders: string[] = [];
+
+    adminContext.beforeAll(async ({ adminApi }) => {
+        product = await createProduct(adminApi);
+    });
+
+    adminContext.afterAll(async ({ adminApi }) => {
+        await deleteOrders(adminApi, createdOrders);
+        await deleteProduct(adminApi, product._id);
+    });
 
     adminContext.beforeEach(async ({ adminRequest }) => {
         ordersAPI = new OrderAPI(adminRequest);
-        productAPI = new ProductAPI(adminRequest);
     });
 
     adminContext('should list all orders for admin', { tag: '@sanity' }, async () => {
-        const listResponse = await productAPI.list({ keyword: PRODUCT_NAME });
-        const products = await listResponse.json();
-        expect(products.products.length).toBeGreaterThan(0);
-
         const createResponse = await ordersAPI.create(
-            makeOrderData({ product: products.products[0]._id }),
+            makeOrderData({ product: product._id }),
         );
         expect(createResponse.status()).toBe(201);
         const createResponseBody = await createResponse.json();
         orderId = createResponseBody._id;
+        createdOrders.push(orderId);
 
         const response = await ordersAPI.listAll();
         expect(response.status()).toBe(200);
@@ -278,28 +295,41 @@ adminContext.describe('Admin Order Management', { tag: ['@api', '@orders', '@adm
 });
 
 userContext.describe('Order Ownership', { tag: ['@api', '@orders'] }, () => {
-    async function createOrderWith(context: APIRequestContext): Promise<string> {
-        const productAPI = new ProductAPI(context);
-        const listResponse = await productAPI.list({ keyword: PRODUCT_NAME });
-        const products = await listResponse.json();
-        expect(products.products.length).toBeGreaterThan(0);
+    let product: TestProduct;
+    const createdOrders: string[] = [];
+    const createdUsers: string[] = [];
 
+    userContext.beforeAll(async ({ adminApi }) => {
+        product = await createProduct(adminApi);
+    });
+
+    userContext.afterAll(async ({ adminApi }) => {
+        await deleteOrders(adminApi, createdOrders);
+        await deleteUsers(adminApi, createdUsers);
+        await deleteProduct(adminApi, product._id);
+    });
+
+    async function createOrderWith(context: APIRequestContext, productId: string): Promise<string> {
         const ordersAPI = new OrderAPI(context);
         const response = await ordersAPI.create(
-            makeOrderData({ product: products.products[0]._id, qty: 1 }),
+            makeOrderData({ product: productId, qty: 1 }),
         );
         expect(response.status()).toBe(201);
-        return (await response.json())._id;
+
+        const orderId = (await response.json())._id;
+        createdOrders.push(orderId);
+        return orderId;
     }
 
     userContext('another user should not be able to view my order', async ({ userRequest, request }) => {
-        const orderId = await createOrderWith(userRequest);
+        const orderId = await createOrderWith(userRequest, product._id);
 
         const stamp = Date.now();
         const registerResponse = await new AuthAPI(request).register(
             `Other User ${stamp}`, `other${stamp}@demo.com`, 'other123',
         );
         expect(registerResponse.status()).toBe(201);
+        createdUsers.push((await registerResponse.json()).id);
 
         const otherOrdersAPI = new OrderAPI(request);
         const response = await otherOrdersAPI.getById(orderId);
@@ -314,7 +344,7 @@ userContext.describe('Order Ownership', { tag: ['@api', '@orders'] }, () => {
     });
 
     userContext('admin should be able to view any order', async ({ userRequest, adminRequest }) => {
-        const orderId = await createOrderWith(userRequest);
+        const orderId = await createOrderWith(userRequest, product._id);
 
         const response = await new OrderAPI(adminRequest).getById(orderId);
         expect(response.status()).toBe(200);
@@ -324,7 +354,7 @@ userContext.describe('Order Ownership', { tag: ['@api', '@orders'] }, () => {
     });
 
     userContext('owner should still be able to view their own order', async ({ userRequest }) => {
-        const orderId = await createOrderWith(userRequest);
+        const orderId = await createOrderWith(userRequest, product._id);
 
         const response = await new OrderAPI(userRequest).getById(orderId);
         expect(response.status()).toBe(200);
@@ -333,21 +363,29 @@ userContext.describe('Order Ownership', { tag: ['@api', '@orders'] }, () => {
 });
 
 userContext.describe('Order Shipping Address', { tag: ['@api', '@orders'] }, () => {
+    let product: TestProduct;
+    const createdOrders: string[] = [];
+
+    userContext.beforeAll(async ({ adminApi }) => {
+        product = await createProduct(adminApi);
+    });
+
+    userContext.afterAll(async ({ adminApi }) => {
+        await deleteOrders(adminApi, createdOrders);
+        await deleteProduct(adminApi, product._id);
+    });
+
     for (const { label, address } of ADDRESS_CASES) {
         userContext(`an order round-trips ${label}`, async ({ userRequest }) => {
-            const productAPI = new ProductAPI(userRequest);
-            const listResponse = await productAPI.list({ keyword: PRODUCT_NAME });
-            const products = await listResponse.json();
-            expect(products.products.length).toBeGreaterThan(0);
-
             const ordersAPI = new OrderAPI(userRequest);
             const response = await ordersAPI.create({
-                items: [{ product: products.products[0]._id, qty: 1 }],
+                items: [{ product: product._id, qty: 1 }],
                 shippingAddress: address,
             });
             expect(response.status()).toBe(201);
 
             const created = await response.json();
+            createdOrders.push(created._id);
             expect(created.shippingAddress).toEqual(address);
 
             const reread = await ordersAPI.getById(created._id);

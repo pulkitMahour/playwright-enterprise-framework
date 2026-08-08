@@ -3,9 +3,9 @@ import { test, expect } from '../../../fixtures/auth.fixture';
 import { test as userSession } from '../../../fixtures/base.fixture';
 import { OrderPage } from '../../../pages/OrderPage';
 import { CheckoutPage } from '../../../pages/CheckoutPage';
+import { createProduct, deleteProduct, deleteOrders, TestProduct } from '../../../fixtures/testData';
 
-const orderShipping = {
-    product: 'Nebula RGB Mousepad',
+const shippingAddress = {
     fullName: 'Test User',
     street: '42 Market St-12',
     city: 'Springfield-Marshal',
@@ -13,7 +13,7 @@ const orderShipping = {
     country: 'Canada',
 };
 
-const EXPECTED_ITEM = { price: 19.99, qty: 1 };
+const EXPECTED_QTY = 1;
 
 test.describe('Order Page', { tag: ['@orders'] }, () => {
     test.describe.configure({ mode: 'serial' })
@@ -21,12 +21,20 @@ test.describe('Order Page', { tag: ['@orders'] }, () => {
     let orderPage: OrderPage;
     let checkoutPage: CheckoutPage;
     let id: string | null;
+    let product: TestProduct;
 
-    test.beforeAll(async ({ freshUserContext }) => {
+    test.beforeAll(async ({ freshUserContext, adminApi }) => {
+        product = await createProduct(adminApi);
+
         page = await freshUserContext.newPage();
         await page.goto('/');
         await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
         checkoutPage = new CheckoutPage(page);
+    });
+
+    test.afterAll(async ({ adminApi }) => {
+        await deleteOrders(adminApi, id ? [id] : []);
+        await deleteProduct(adminApi, product._id);
     });
 
     test.beforeEach(async () => {
@@ -42,7 +50,7 @@ test.describe('Order Page', { tag: ['@orders'] }, () => {
     });
 
     test('Place an order and check in my orders list', { tag: '@smoke' }, async () => {
-        await orderPage.placeOrder(orderShipping);
+        await orderPage.placeOrder({ ...shippingAddress, product: product.name });
         id = await orderPage.order_detail.getAttribute('data-order-id');
         if (!id) throw new Error('Order ID not found');
         await orderPage.nav_orders.click();
@@ -58,22 +66,22 @@ test.describe('Order Page', { tag: ['@orders'] }, () => {
         await expect(orderPage.order_detail).toBeVisible();
         await expect(orderPage.order_detail).toHaveAttribute('data-order-id', id)
 
-        const item = orderPage.itemFor(orderShipping.product);
+        const item = orderPage.itemFor(product.name);
         await expect(item).toBeVisible();
-        await expect(item).toContainText(`${EXPECTED_ITEM.qty} × $${EXPECTED_ITEM.price.toFixed(2)}`);
+        await expect(item).toContainText(`${EXPECTED_QTY} × $${product.price.toFixed(2)}`);
 
-        const subtotal = EXPECTED_ITEM.price * EXPECTED_ITEM.qty;
+        const subtotal = product.price * EXPECTED_QTY;
         const calculate = checkoutPage.calculation(subtotal);
         await expect(orderPage.order_total).toHaveText(`$${calculate.total}`);
 
         await expect(orderPage.order_status).toHaveText('processing');
         await expect(orderPage.order_paid).toHaveText('Paid');
 
-        await expect(orderPage.order_shipping).toContainText(orderShipping.fullName);
-        await expect(orderPage.order_shipping).toContainText(orderShipping.street);
-        await expect(orderPage.order_shipping).toContainText(orderShipping.city);
-        await expect(orderPage.order_shipping).toContainText(orderShipping.postalCode);
-        await expect(orderPage.order_shipping).toContainText(orderShipping.country);
+        await expect(orderPage.order_shipping).toContainText(shippingAddress.fullName);
+        await expect(orderPage.order_shipping).toContainText(shippingAddress.street);
+        await expect(orderPage.order_shipping).toContainText(shippingAddress.city);
+        await expect(orderPage.order_shipping).toContainText(shippingAddress.postalCode);
+        await expect(orderPage.order_shipping).toContainText(shippingAddress.country);
     });
 });
 
@@ -81,6 +89,17 @@ test.describe('Order Page', { tag: ['@orders'] }, () => {
 userSession.describe('Order Page - Network Failures', { tag: ['@orders'] }, () => {
     let page: Page;
     let orderPage: OrderPage;
+    let product: TestProduct;
+    const createdOrders: string[] = [];
+
+    userSession.beforeAll(async ({ adminApi }) => {
+        product = await createProduct(adminApi);
+    });
+
+    userSession.afterAll(async ({ adminApi }) => {
+        await deleteOrders(adminApi, createdOrders);
+        await deleteProduct(adminApi, product._id);
+    });
 
     userSession.beforeEach(async ({ userContext }) => {
         page = await userContext.newPage();
@@ -89,7 +108,10 @@ userSession.describe('Order Page - Network Failures', { tag: ['@orders'] }, () =
         await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
 
         orderPage = new OrderPage(page);
-        await orderPage.placeOrder(orderShipping);
+        await orderPage.placeOrder({ ...shippingAddress, product: product.name });
+
+        const orderId = await orderPage.order_detail.getAttribute('data-order-id');
+        if (orderId) createdOrders.push(orderId);
     });
 
     userSession.afterEach(async () => {

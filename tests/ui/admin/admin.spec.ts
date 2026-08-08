@@ -1,6 +1,7 @@
 import { type Page } from '@playwright/test';
 import { test, expect } from '../../../fixtures/base.fixture';
 import { AdminPage } from '../../../pages/AdminPage';
+import { createProduct, deleteProduct, deleteOrders, deleteProductsByName, TestProduct } from '../../../fixtures/testData';
 
 const NEW_PRODUCT = {
     name: `Test Product ${Date.now()}`,
@@ -41,6 +42,10 @@ test.describe('Admin Page', { tag: ['@admin'] }, () => {
     });
 
     test.describe('Admin Products', () => {
+        test.afterAll(async ({ adminApi }) => {
+            await deleteProductsByName(adminApi, NEW_PRODUCT.name);
+        });
+
         test('Verify admin products table', { tag: '@smoke' }, async () => {
             await adminPage.admin_nav_products.click();
             await expect(page).toHaveURL('/admin/products');
@@ -110,12 +115,28 @@ test.describe('Admin Page', { tag: ['@admin'] }, () => {
     });
 
     test.describe('Admin Orders', () => {
+        let orderProduct: TestProduct;
+        const createdOrders: string[] = [];
+
+        test.beforeAll(async ({ adminApi }) => {
+            orderProduct = await createProduct(adminApi);
+        });
+
+        test.afterAll(async ({ adminApi }) => {
+            await deleteOrders(adminApi, createdOrders);
+            await deleteProduct(adminApi, orderProduct._id);
+        });
+
         test('Verify admin orders table', { tag: '@smoke' }, async () => {
             await page.goto('/');
-            await adminPage.addToCart('Raptor Gaming Mouse');
+            await adminPage.addToCart(orderProduct.name);
             await adminPage.goToCart();
             await adminPage.cart_checkout.click();
             await adminPage.checkout_place_order.click();
+
+            await expect(adminPage.order_detail).toBeVisible();
+            const orderId = await adminPage.order_detail.getAttribute('data-order-id');
+            if (orderId) createdOrders.push(orderId);
 
             await adminPage.nav_admin.click();
             await adminPage.admin_nav_orders.click();

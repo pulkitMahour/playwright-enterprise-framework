@@ -1,6 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../../fixtures/api.fixture';
 import { AuthAPI } from '../../api/AuthAPI';
 import { INVALID_LOGINS, INVALID_REGISTRATIONS } from '../../data/auth';
+import { deleteUsers } from '../../fixtures/testData';
 
 test.describe('Auth Login/Logout', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
@@ -48,14 +50,20 @@ test.describe('Auth Login/Logout', { tag: ['@api', '@auth'] }, () => {
 test.describe('Auth Register', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
     const id = Date.now();
+    const createdUsers: string[] = [];
 
     test.beforeEach(async ({ request }) => {
         authAPI = new AuthAPI(request);
     });
 
+    test.afterAll(async ({ adminApi }) => {
+        await deleteUsers(adminApi, createdUsers);
+    });
+
     test('should register successfully with valid data', { tag: '@sanity' }, async () => {
         const response = await authAPI.register(`New User ${id}`, `newuser${id}@demo.com`, 'newuser123');
         expect(response.status()).toBe(201);
+        createdUsers.push((await response.json()).id);
     });
 
     test('should fail register with existing email', async () => {

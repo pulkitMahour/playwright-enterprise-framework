@@ -1,9 +1,10 @@
-import { test as base, BrowserContext } from '@playwright/test';
+import { BrowserContext } from '@playwright/test';
+import { test as baseTest } from './base.fixture';   // built on base.fixture, so `adminApi` comes along
 import { LoginPage } from '../pages/LoginPage';
 import { RegisterPage } from '../pages/RegisterPage';
-import { credentialsFor } from './base.fixture';
+import { credentialsFor, deleteUsersByEmail } from './testData';
 
-export const customLogin = base.extend<{ loginFixture: LoginPage }>({
+export const customLogin = baseTest.extend<{ loginFixture: LoginPage }>({
     loginFixture: async ({ page }, use) => {
         const loginPage = new LoginPage(page);
         const { email, password } = credentialsFor('user');
@@ -14,19 +15,22 @@ export const customLogin = base.extend<{ loginFixture: LoginPage }>({
     }
 })
 
-export const customRegister = base.extend<{ registerFixture: RegisterPage }>({
-    registerFixture: async ({ page }, use) => {
+export const customRegister = baseTest.extend<{ registerFixture: RegisterPage }>({
+    registerFixture: async ({ page, adminApi }, use) => {
         const registerPage = new RegisterPage(page);
+        const email = `tiger${Date.now()}@demo.com`;
 
         await registerPage.gotoRegisterPage();
-        await registerPage.register("Tiger", `tiger${Date.now()}@demo.com`, 'user123')
+        await registerPage.register("Tiger", email, 'user123')
         await use(registerPage);
+
+        await deleteUsersByEmail(adminApi, [email]);
     }
 })
 
-export const test = base.extend<object, { freshUserContext: BrowserContext }>({
+export const test = baseTest.extend<object, { freshUserContext: BrowserContext }>({
     freshUserContext: [
-        async ({ browser }, use) => {
+        async ({ browser, adminApi }, use) => {
             const id = Date.now();
             const name = `tester-${id}`
             const email = `tester${id}@demo.com`
@@ -42,6 +46,8 @@ export const test = base.extend<object, { freshUserContext: BrowserContext }>({
             await page.close();
             await use(context);
             await context.close();
+
+            await deleteUsersByEmail(adminApi, [email]);
         },
         { scope: 'worker' },
     ],

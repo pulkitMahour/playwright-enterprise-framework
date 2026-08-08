@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../../fixtures/base.fixture';
+import { deleteUsersByEmail } from '../../../fixtures/testData';
 import { LoginPage } from '../../../pages/LoginPage';
 import { RegisterPage } from '../../../pages/RegisterPage';
 import { HomePage } from '../../../pages/HomePage';
@@ -25,12 +26,21 @@ test.describe('Register Page - Visual Regression', () => {
 });
 
 test.describe('Empty Page - Visual Regression', () => {
+    const registeredEmails: string[] = [];
+
     test.beforeEach(async ({ page }) => {
         const registerPage = new RegisterPage(page);
         const snap = `${Date.now()}-${test.info().workerIndex}`;
+        const email = `visualuser${snap}@demo.com`;
+        registeredEmails.push(email);
+
         await registerPage.gotoRegisterPage();
-        await registerPage.register('Visual User', `visualuser${snap}@demo.com`, "user123");
+        await registerPage.register('Visual User', email, "user123");
         await registerPage.waitForLoggedIn();
+    });
+
+    test.afterAll(async ({ adminApi }) => {
+        await deleteUsersByEmail(adminApi, registeredEmails);
     });
 
     test('No product found matches the baseline visual snapshot', { tag: ['@catalog', '@visual'] }, async ({ page }) => {
