@@ -11,6 +11,7 @@ export class HomePage extends BasePage {
     readonly empty_state: Locator;
     readonly product_card_category: Locator;
     readonly product_card_price: Locator;
+    readonly loading_state: Locator;
 
     constructor(page: Page) {
         super(page);
@@ -22,6 +23,7 @@ export class HomePage extends BasePage {
         this.empty_state = page.getByTestId('empty');
         this.product_card_category = this.product_card.locator('.product-card-category');
         this.product_card_price = this.product_card.getByTestId('product-card-price');
+        this.loading_state = page.getByTestId('loading');
     }
 
     async gotoHomePage() {

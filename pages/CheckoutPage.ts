@@ -14,7 +14,8 @@ export class CheckoutPage extends BasePage {
     readonly summary_shipping: Locator;
     readonly summary_total: Locator;
     readonly payment_note: Locator;
-    
+    readonly checkout_error: Locator;
+
 
     constructor(page: Page) {
         super(page);
@@ -30,6 +31,7 @@ export class CheckoutPage extends BasePage {
         this.summary_shipping = page.getByTestId('summary-shipping');
         this.summary_total = page.getByTestId('summary-total');
         this.payment_note = page.getByTestId('payment-note');
+        this.checkout_error = page.getByTestId('checkout-error');
     }
 
     calculation(price: number): { tax: string; shipping: string; total: string } {

@@ -2,7 +2,7 @@ import { type Page } from '@playwright/test';
 import { test, expect } from '../../../fixtures/base.fixture';
 import { LoginPage } from '../../../pages/LoginPage';
 
-test.describe('rbac Page', () => {
+test.describe('rbac Page', { tag: ['@admin', '@auth'] }, () => {
     let page: Page;
     let loginPage: LoginPage;
 
@@ -13,7 +13,7 @@ test.describe('rbac Page', () => {
         loginPage = new LoginPage(page);
     });
 
-    test('RBAC test with user credentials', async () => {
+    test('RBAC test with user credentials', { tag: '@smoke' }, async () => {
         await page.goto('/admin');
         await expect(page).toHaveURL('/');
         await expect(loginPage.nav_admin).toBeHidden();

@@ -1,6 +1,7 @@
 import { type Page } from '@playwright/test';
 import { test, expect } from '../../../fixtures/base.fixture';
 import { AdminPage } from '../../../pages/AdminPage';
+import { createProduct, deleteProduct, deleteOrders, deleteProductsByName, TestProduct } from '../../../fixtures/testData';
 
 const NEW_PRODUCT = {
     name: `Test Product ${Date.now()}`,
@@ -12,7 +13,7 @@ const NEW_PRODUCT = {
     featured: true
 };
 
-test.describe('Admin Page', () => {
+test.describe('Admin Page', { tag: ['@admin'] }, () => {
     test.describe.configure({ mode: 'serial' })
 
     let page: Page;
@@ -32,7 +33,7 @@ test.describe('Admin Page', () => {
     });
 
     test.describe('Admin Dashboard', () => {
-        test('Verify admin dashboard stats', async () => {
+        test('Verify admin dashboard stats', { tag: '@smoke' }, async () => {
             await expect(adminPage.admin_stat_users).toBeVisible();
             await expect(adminPage.admin_stat_products).toBeVisible();
             await expect(adminPage.admin_stat_orders).toBeVisible();
@@ -41,7 +42,11 @@ test.describe('Admin Page', () => {
     });
 
     test.describe('Admin Products', () => {
-        test('Verify admin products table', async () => {
+        test.afterAll(async ({ adminApi }) => {
+            await deleteProductsByName(adminApi, NEW_PRODUCT.name);
+        });
+
+        test('Verify admin products table', { tag: '@smoke' }, async () => {
             await adminPage.admin_nav_products.click();
             await expect(page).toHaveURL('/admin/products');
             await expect(adminPage.admin_products_table).toBeVisible();
@@ -49,7 +54,7 @@ test.describe('Admin Page', () => {
             expect(productRowCount).toBeGreaterThan(0);
         });
 
-        test('Verify product creation', async () => {
+        test('Verify product creation', { tag: '@sanity' }, async () => {
             await adminPage.admin_nav_products.click();
             await adminPage.product_create.click();
             await expect(adminPage.product_form).toBeVisible();
@@ -63,7 +68,7 @@ test.describe('Admin Page', () => {
             await expect(createdRow.getByTestId('admin-product-delete')).toBeEnabled();
         });
 
-        test('Verify product editing', async () => {
+        test('Verify product editing', { tag: '@sanity' }, async () => {
             await adminPage.admin_nav_products.click();
             const productRow = adminPage.rowFor(NEW_PRODUCT.name);
             await expect(productRow).toBeVisible();
@@ -78,7 +83,7 @@ test.describe('Admin Page', () => {
             await expect(productRow.locator('td').nth(3)).toHaveText(updatedProduct.stock.toString());
         });
 
-        test('Verify product deletion', async () => {
+        test('Verify product deletion', { tag: '@sanity' }, async () => {
             await adminPage.admin_nav_products.click();
             const productRow = adminPage.rowFor(NEW_PRODUCT.name);
             await expect(productRow).toBeVisible();
@@ -110,12 +115,28 @@ test.describe('Admin Page', () => {
     });
 
     test.describe('Admin Orders', () => {
-        test('Verify admin orders table', async () => {
+        let orderProduct: TestProduct;
+        const createdOrders: string[] = [];
+
+        test.beforeAll(async ({ adminApi }) => {
+            orderProduct = await createProduct(adminApi);
+        });
+
+        test.afterAll(async ({ adminApi }) => {
+            await deleteOrders(adminApi, createdOrders);
+            await deleteProduct(adminApi, orderProduct._id);
+        });
+
+        test('Verify admin orders table', { tag: '@smoke' }, async () => {
             await page.goto('/');
-            await adminPage.addToCart('Raptor Gaming Mouse');
+            await adminPage.addToCart(orderProduct.name);
             await adminPage.goToCart();
             await adminPage.cart_checkout.click();
             await adminPage.checkout_place_order.click();
+
+            await expect(adminPage.order_detail).toBeVisible();
+            const orderId = await adminPage.order_detail.getAttribute('data-order-id');
+            if (orderId) createdOrders.push(orderId);
 
             await adminPage.nav_admin.click();
             await adminPage.admin_nav_orders.click();
@@ -137,7 +158,7 @@ test.describe('Admin Page', () => {
     });
 
     test.describe('Admin Users', () => {
-        test('Verify admin users table', async () => {
+        test('Verify admin users table', { tag: '@sanity' }, async () => {
             await adminPage.admin_nav_users.click();
             await expect(page).toHaveURL('/admin/users');
             await expect(adminPage.admin_users_table).toBeVisible();

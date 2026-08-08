@@ -10,7 +10,8 @@ export class ProductPage extends BasePage {
     readonly product_description: Locator;
     readonly product_qty: Locator;
     readonly product_card_title: Locator;
-    
+    readonly empty_state: Locator;
+
 
     constructor(page: Page) {
         super(page);
@@ -22,5 +23,6 @@ export class ProductPage extends BasePage {
         this.product_description = page.getByTestId('product-description');
         this.product_qty = page.getByTestId('product-qty');
         this.product_card_title = this.product_card.getByTestId('product-card-title');
+        this.empty_state = page.getByTestId('empty');
     }
 }

@@ -1,14 +1,17 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from '../../fixtures/api.fixture';
 import { AuthAPI } from '../../api/AuthAPI';
+import { INVALID_LOGINS, INVALID_REGISTRATIONS } from '../../data/auth';
+import { deleteUsers } from '../../fixtures/testData';
 
-test.describe('Auth Login/Logout', () => {
+test.describe('Auth Login/Logout', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
 
     test.beforeEach(async ({ request }) => {
         authAPI = new AuthAPI(request);
     });
 
-    test('should login successfully with valid credentials', async () => {
+    test('should login successfully with valid credentials', { tag: '@smoke' }, async () => {
         const response = await authAPI.login('user@demo.com', 'user123');
         expect(response.status()).toBe(200);
 
@@ -28,7 +31,7 @@ test.describe('Auth Login/Logout', () => {
         expect(headers['set-cookie']).toBeUndefined();
     });
 
-    test('should logout successfully', async () => {
+    test('should logout successfully', { tag: '@sanity' }, async () => {
         const loginResponse = await authAPI.login('user@demo.com', 'user123');
         expect(loginResponse.status()).toBe(200);
 
@@ -44,17 +47,23 @@ test.describe('Auth Login/Logout', () => {
     });
 });
 
-test.describe('Auth Register', () => {;
+test.describe('Auth Register', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
     const id = Date.now();
+    const createdUsers: string[] = [];
 
     test.beforeEach(async ({ request }) => {
         authAPI = new AuthAPI(request);
     });
 
-    test('should register successfully with valid data', async () => {
+    test.afterAll(async ({ adminApi }) => {
+        await deleteUsers(adminApi, createdUsers);
+    });
+
+    test('should register successfully with valid data', { tag: '@sanity' }, async () => {
         const response = await authAPI.register(`New User ${id}`, `newuser${id}@demo.com`, 'newuser123');
         expect(response.status()).toBe(201);
+        createdUsers.push((await response.json()).id);
     });
 
     test('should fail register with existing email', async () => {
@@ -65,45 +74,21 @@ test.describe('Auth Register', () => {;
     });
 });
 
-test.describe('Auth Validation', () => {
+test.describe('Auth Validation', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
 
     test.beforeEach(async ({ request }) => {
         authAPI = new AuthAPI(request);
     });
 
-    const invalidLogins: Array<{ label: string; payload: unknown }> = [
-        { label: 'an empty body', payload: {} },
-        { label: 'a missing password', payload: { email: 'user@demo.com' } },
-        { label: 'a missing email', payload: { password: 'user123' } },
-        { label: 'a malformed email', payload: { email: 'not-an-email', password: 'user123' } },
-        { label: 'a non-string password', payload: { email: 'user@demo.com', password: 12345 } },
-    ];
-
-    for (const { label, payload } of invalidLogins) {
+    for (const { label, payload } of INVALID_LOGINS) {
         test(`login should reject ${label}`, async () => {
             const response = await authAPI.loginRaw(payload);
             expect(response.status()).toBe(400);
         });
     }
 
-    const invalidRegistrations: Array<{ label: string; payload: unknown }> = [
-        { label: 'an empty body', payload: {} },
-        {
-            label: 'a name shorter than 2 chars',
-            payload: { name: 'A', email: `short${Date.now()}@demo.com`, password: 'user123' },
-        },
-        {
-            label: 'a password shorter than 6 chars',
-            payload: { name: 'Short Password', email: `pw${Date.now()}@demo.com`, password: '123' },
-        },
-        {
-            label: 'a malformed email',
-            payload: { name: 'Bad Email', email: 'not-an-email', password: 'user123' },
-        },
-    ];
-
-    for (const { label, payload } of invalidRegistrations) {
+    for (const { label, payload } of INVALID_REGISTRATIONS) {
         test(`register should reject ${label}`, async () => {
             const response = await authAPI.registerRaw(payload);
             expect(response.status()).toBe(400);

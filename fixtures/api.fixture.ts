@@ -1,33 +1,29 @@
-import { test as base, APIRequestContext, PlaywrightWorkerArgs, PlaywrightTestOptions } from '@playwright/test';
-import { credentialsFor, TestRole } from './base.fixture';
+import { APIRequestContext } from '@playwright/test';
+import { test as baseTest, TestRole } from './base.fixture';
+import { loginViaApi } from './testData';
 
-function authenticatedContextForRole(role: TestRole) {
+function apiContextFor(role: TestRole) {
     return async (
-        { playwright, baseURL }: PlaywrightWorkerArgs & PlaywrightTestOptions,
-        use: (r: APIRequestContext) => Promise<void>,
+        { baseURL }: { baseURL?: string },
+        use: (api: APIRequestContext) => Promise<void>,
     ) => {
-        const { email, password } = credentialsFor(role);
-        const context = await playwright.request.newContext({ baseURL });
+        if (!baseURL) throw new Error('baseURL is not set on the project — cannot reach the API.');
 
-        const loginResponse = await context.post('/api/auth/login', {
-            data: { email, password }
-        });
-
-        if (!loginResponse.ok()) {
-            throw new Error(`Login failed for email: ${email}. Status: ${loginResponse.status()}`);
+        const api = await loginViaApi(baseURL, role);
+        try {
+            await use(api);
+        } finally {
+            await api.dispose();
         }
-
-        await use(context);
-        await context.dispose();
     };
 }
 
-export const test = base.extend<{
+export const test = baseTest.extend<{
     userRequest: APIRequestContext;
     adminRequest: APIRequestContext;
 }>({
-    userRequest: authenticatedContextForRole('user'),
-    adminRequest: authenticatedContextForRole('admin')
+    userRequest: apiContextFor('user'),
+    adminRequest: apiContextFor('admin'),
 });
 
 export { expect } from '@playwright/test';

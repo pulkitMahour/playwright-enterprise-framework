@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { ProductPage } from '../../../pages/ProductPage';
 
-test.describe('Product Page', () => {
+test.describe('Product Page', { tag: ['@catalog'] }, () => {
     let productPage: ProductPage;
 
     test.beforeEach(async ({ page }) => {
@@ -9,7 +9,7 @@ test.describe('Product Page', () => {
         await productPage.goto('/');
     });
 
-    test('Product details are displayed correctly', async ({ page }) => {
+    test('Product details are displayed correctly', { tag: '@smoke' }, async ({ page }) => {
         await productPage.searchProduct('Vortex Mechanical Keyboard');
         const product = productPage.product_card_title.filter({ hasText: "Vortex Mechanical Keyboard" })
         const href = await product.getAttribute('href');
@@ -25,7 +25,7 @@ test.describe('Product Page', () => {
         await expect(productPage.product_qty).toHaveValue('1');
     });
 
-    test('Add quantity and cart increment', async () => {
+    test('Add quantity and cart increment', { tag: '@sanity' }, async () => {
         await productPage.searchProduct('Raptor Gaming Mouse');
         const product = productPage.product_card_title.filter({ hasText: "Raptor Gaming Mouse" })
 
@@ -45,10 +45,35 @@ test.describe('Product Page', () => {
         await expect(productPage.product_stock).toHaveText('Out of stock')
     })
 
-    test('Add to cart from card grid', async () => {
+    test('Add to cart from card grid', { tag: '@sanity' }, async () => {
         await productPage.addToCart('Raptor Gaming Mouse');
         await productPage.goToCart();
         await expect(productPage.add_to_cart_success).toBeVisible();
         await expect(productPage.nav_cart_count).toHaveText('1')
     })
+});
+
+test.describe('Product Detail Page - Error Handling', { tag: ['@catalog'] }, () => {
+    test('Should display not-found state and hide add-to-cart button when product API returns 500', async ({ page }) => {
+        const productPage = new ProductPage(page);
+        await productPage.goto('/');
+        await productPage.searchProduct('Vortex Mechanical Keyboard');
+        const product = productPage.product_card_title.filter({ hasText: "Vortex Mechanical Keyboard" })
+        const href = await product.getAttribute('href');
+
+        const id = href!.split('/').pop();
+        await page.route((url) => url.pathname === `/api/products/${id}`, async (route) => {
+            await route.fulfill({
+                status: 500,
+                contentType: 'application/json',
+                body: JSON.stringify({ error: 'Product details could not be fetched' }),
+            });
+        });
+
+        await product.click();
+
+        await expect(productPage.empty_state).toHaveText('Product not found.');
+        await expect(productPage.product_detail).toBeHidden();
+        await expect(productPage.add_to_cart_button).toBeHidden();
+    });
 });

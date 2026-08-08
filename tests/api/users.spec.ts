@@ -1,7 +1,9 @@
-import { test, expect, APIRequestContext } from '@playwright/test';
-import { test as adminContext, test as userContext } from '../../fixtures/api.fixture';
+import { expect, APIRequestContext } from '@playwright/test';
+import { test, test as adminContext, test as userContext } from '../../fixtures/api.fixture';
 import { UserAPI } from '../../api/UserAPI';
 import { AuthAPI } from '../../api/AuthAPI';
+import { INVALID_PROFILE_UPDATES } from '../../data/users';
+import { deleteUsers } from '../../fixtures/testData';
 
 type FreshUser = {
     id: string;
@@ -13,7 +15,7 @@ type FreshUser = {
 };
 
 async function registerFreshUser(context: APIRequestContext): Promise<FreshUser> {
-    const stamp = `${Date.now()}2. Validation row khaali hai — PUT /users/me par name: 'A' (@MinLength(2)), password: '123' (@MinLength(6)), name: 123 → sab 400. Matrix ka validation cell users ke liye poora blank hai.`;
+    const stamp = `${Date.now()}-${test.info().workerIndex}`;
     const password = 'newuser123';
 
     const response = await new AuthAPI(context).register(
@@ -24,15 +26,21 @@ async function registerFreshUser(context: APIRequestContext): Promise<FreshUser>
     return { ...(await response.json()), password };
 }
 
-test.describe('User Profile', () => {
+test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
+    const createdUsers: string[] = [];
 
     test.beforeEach(async ({ request }) => {
         userAPI = new UserAPI(request);
     });
 
-    test('should fetch user profile successfully', async ({ request }) => {
+    test.afterAll(async ({ adminApi }) => {
+        await deleteUsers(adminApi, createdUsers);
+    });
+
+    test('should fetch user profile successfully', { tag: '@sanity' }, async ({ request }) => {
         const user = await registerFreshUser(request);
+        createdUsers.push(user.id);
 
         const response = await userAPI.me();
         expect(response.status()).toBe(200);
@@ -49,8 +57,9 @@ test.describe('User Profile', () => {
         expect(profile.isSeed).toBe(false);
     });
 
-    test('should update user profile successfully', async ({ request }) => {
+    test('should update user profile successfully', { tag: '@sanity' }, async ({ request }) => {
         const user = await registerFreshUser(request);
+        createdUsers.push(user.id);
 
         const updateProfile = {
             name: `Updated ${user.name}`,
@@ -78,6 +87,7 @@ test.describe('User Profile', () => {
 
     test('should merge address fields instead of replacing the block', async ({ request }) => {
         const user = await registerFreshUser(request);
+        createdUsers.push(user.id);
 
         const first = await userAPI.updateProfile({
             address: { city: 'Springfield', country: 'USA' },
@@ -99,7 +109,6 @@ test.describe('User Profile', () => {
     });
 
     test('unauthenticated access to admin list, stats and delete should be 401', async () => {
-        // The id is never reached — the auth guard rejects before the handler looks it up — so this test needs no real user to exist.
         const someUserId = '6'.repeat(24);
 
         const listAll = await userAPI.listAll();
@@ -114,24 +123,19 @@ test.describe('User Profile', () => {
 
 });
 
-userContext.describe('Profile Update Validation', () => {
+userContext.describe('Profile Update Validation', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
+    const createdUsers: string[] = [];
 
     userContext.beforeEach(async ({ userRequest }) => {
         userAPI = new UserAPI(userRequest);
     });
 
-    const invalidUpdates: Array<{ label: string; payload: unknown }> = [
-        { label: 'a name shorter than 2 chars', payload: { name: 'A' } },
-        { label: 'an empty name', payload: { name: '' } },
-        { label: 'a non-string name', payload: { name: 123 } },
-        { label: 'a password shorter than 6 chars', payload: { password: '123' } },
-        { label: 'a non-string password', payload: { password: 123456 } },
-        { label: 'an address that is not an object', payload: { address: 'Springfield' } },
-        { label: 'a non-string address field', payload: { address: { city: 123 } } },
-    ];
+    userContext.afterAll(async ({ adminApi }) => {
+        await deleteUsers(adminApi, createdUsers);
+    });
 
-    for (const { label, payload } of invalidUpdates) {
+    for (const { label, payload } of INVALID_PROFILE_UPDATES) {
         userContext(`profile update should reject ${label}`, async () => {
             const response = await userAPI.updateProfileRaw(payload);
             expect(response.status()).toBe(400);
@@ -152,18 +156,19 @@ userContext.describe('Profile Update Validation', () => {
 
     userContext('profile update should accept the shortest allowed values', async ({ request }) => {
         const user = await registerFreshUser(request);
+        createdUsers.push(user.id);
         const freshUserAPI = new UserAPI(request);
 
-        const response = await freshUserAPI.updateProfile({ name: 'Al', password: '123456' });
+        const response = await freshUserAPI.updateProfile({ name: 'Jo', password: '123456' });
         expect(response.status()).toBe(200);
-        expect((await response.json()).name).toBe('Al');
+        expect((await response.json()).name).toBe('Jo');
 
         const login = await new AuthAPI(request).login(user.email, '123456');
         expect(login.status()).toBe(200);
     });
 });
 
-userContext.describe('Default User', () => {
+userContext.describe('Default User', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
 
     userContext.beforeEach(async ({ userRequest }) => {
@@ -186,15 +191,20 @@ userContext.describe('Default User', () => {
     })
 });
 
-adminContext.describe('Admin User Management', () => {
+adminContext.describe('Admin User Management', { tag: ['@api', '@profile', '@admin'] }, () => {
     adminContext.describe.configure({ mode: "serial" });
     let userAPI: UserAPI;
+    const createdUsers: string[] = [];
 
     adminContext.beforeEach(async ({ adminRequest }) => {
         userAPI = new UserAPI(adminRequest);
     });
 
-    adminContext('should list all users for admin', async () => {
+    adminContext.afterAll(async ({ adminApi }) => {
+        await deleteUsers(adminApi, createdUsers);
+    });
+
+    adminContext('should list all users for admin', { tag: '@sanity' }, async () => {
         const response = await userAPI.listAll();
         expect(response.status()).toBe(200);
 
@@ -203,7 +213,7 @@ adminContext.describe('Admin User Management', () => {
         expect(responseBody.length).toBeGreaterThan(0);
     });
 
-    adminContext('should list the stats for admin', async () => {
+    adminContext('should list the stats for admin', { tag: '@sanity' }, async () => {
         const response = await userAPI.stats();
         expect(response.status()).toBe(200);
 
@@ -214,8 +224,9 @@ adminContext.describe('Admin User Management', () => {
         expect(responseBody).toHaveProperty('revenue');
     });
 
-    adminContext('should remove a user for admin', async ({ request }) => {
+    adminContext('should remove a user for admin', { tag: '@sanity' }, async ({ request }) => {
         const { id: user_id } = await registerFreshUser(request);
+        createdUsers.push(user_id);
 
         const response = await userAPI.remove(user_id);
         expect(response.status()).toBe(200);

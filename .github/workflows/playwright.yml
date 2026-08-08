@@ -1,0 +1,151 @@
+name: Playwright
+
+on:
+  push:
+  # schedule:
+  #   # nightly smoke against the deployed app
+  #   - cron: '0 2 * * *'
+  workflow_dispatch:
+
+env:
+  TEST_ROLE: user
+  USER_EMAIL: user@demo.com
+  USER_PASSWORD: user123
+  ADMIN_EMAIL: admin@demo.com
+  ADMIN_PASSWORD: admin123
+
+jobs:
+  full-suite:
+    name: Full suite (TestMart booted in-job)
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.0-noble
+      options: --ipc=host
+    env:
+      BASE_URL: http://localhost:5173
+
+    steps:
+      - name: Checkout tests
+        uses: actions/checkout@v4
+
+      - name: Checkout TestMart
+        uses: actions/checkout@v4
+        with:
+          repository: pulkitMahour/testmart
+          path: app
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json', 'app/package-lock.json', 'app/server/package-lock.json', 'app/client/package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+
+      - name: Install test dependencies
+        run: npm ci
+
+      - name: Install app dependencies
+        working-directory: app
+        run: |
+          npm ci
+          npm ci --prefix server
+          npm ci --prefix client
+
+      - name: Cache mongod binary
+        uses: actions/cache@v4
+        with:
+          path: app/node_modules/.cache/mongodb-memory-server
+          key: mongod-${{ runner.os }}-7.0
+
+      - name: Start TestMart
+        working-directory: app
+        run: |
+          npm run dev > "${GITHUB_WORKSPACE}/testmart.log" 2>&1 &
+          echo "started"
+
+      - name: Wait for TestMart
+        run: |
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:5000/api/health > /dev/null \
+               && curl -sf http://localhost:5173 > /dev/null; then
+              echo "TestMart is up after ${i} attempts"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::TestMart did not come up within 180s"
+          cat "${GITHUB_WORKSPACE}/testmart.log"
+          exit 1
+
+      # The Steps in a container job run as root, but $HOME is /github/home, owned by the image's `pwuser`. Firefox refuses to start in that situation ("Running Nightly as root in a regular user's session is not supported"). Chromium and WebKit do not care. Set only here, so the npm cache above keeps using /github/home.
+      - name: Run tests
+        env:
+          HOME: /root
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-full
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Upload TestMart log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testmart-log
+          path: testmart.log
+          retention-days: 7
+
+  smoke-render:
+    name: Smoke (deployed on Render)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.62.0-noble
+      options: --ipc=host
+    env:
+      BASE_URL: https://testmart-gvcc.onrender.com
+
+    steps:
+      - name: Checkout tests
+        uses: actions/checkout@v4
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+
+      - name: Install test dependencies
+        run: npm ci
+
+      # Render's free tier spins the instance down; the first request takes ~50s to wake it.
+      - name: Wake the instance
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf --max-time 20 "${BASE_URL}/api/health" > /dev/null; then
+              echo "Awake after ${i} attempts"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::${BASE_URL} did not wake within 300s"
+          exit 1
+
+      - name: Run smoke tests
+        run: npm run test:smoke:ci
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-smoke
+          path: playwright-report/
+          retention-days: 7
