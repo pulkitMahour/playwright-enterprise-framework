@@ -79,7 +79,10 @@ jobs:
           cat "${GITHUB_WORKSPACE}/testmart.log"
           exit 1
 
+      # The Steps in a container job run as root, but $HOME is /github/home, owned by the image's `pwuser`. Firefox refuses to start in that situation ("Running Nightly as root in a regular user's session is not supported"). Chromium and WebKit do not care. Set only here, so the npm cache above keeps using /github/home.
       - name: Run tests
+        env:
+          HOME: /root
         run: npx playwright test
 
       - name: Upload Playwright report
