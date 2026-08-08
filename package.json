@@ -17,8 +17,8 @@
     "test:admin": "playwright test --grep @admin",
     "test:checkout": "playwright test --grep @checkout",
     "test:smoke:ci": "playwright test --grep @smoke --project=api --project=chromium",
-    "test:visual": "playwright test --grep @visual --project=chromium",
-    "test:visual:update": "playwright test --grep @visual --project=chromium --update-snapshots"
+    "test:visual": "./scripts/visual.sh",
+    "test:visual:update": "./scripts/visual.sh --update-snapshots"
   },
   "keywords": [],
   "author": "",
