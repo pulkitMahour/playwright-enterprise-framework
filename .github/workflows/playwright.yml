@@ -89,6 +89,7 @@ jobs:
       # creating the dir with no results would defeat the hashFiles gate in publish-report.
       - name: Add Allure environment and executor metadata
         if: always()
+        shell: bash
         run: |
           [ -d allure-results ] || { echo "no allure-results — nothing to annotate"; exit 0; }
           {
