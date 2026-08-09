@@ -18,7 +18,10 @@
     "test:checkout": "playwright test --grep @checkout",
     "test:smoke:ci": "playwright test --grep @smoke --project=api --project=chromium",
     "test:visual": "./scripts/visual.sh",
-    "test:visual:update": "./scripts/visual.sh --update-snapshots"
+    "test:visual:update": "./scripts/visual.sh --update-snapshots",
+    "test:allure": "rm -rf allure-results allure-report && ALLURE=1 playwright test",
+    "allure:report": "allure generate allure-results --clean -o allure-report",
+    "allure:open": "allure open allure-report"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +30,8 @@
   "devDependencies": {
     "@playwright/test": "^1.62.0",
     "@types/node": "^26.1.1",
+    "allure-commandline": "^2.43.0",
+    "allure-playwright": "^3.10.2",
     "dotenv": "^17.4.2",
     "typescript": "^7.0.2"
   }

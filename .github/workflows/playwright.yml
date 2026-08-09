@@ -91,7 +91,17 @@ jobs:
         with:
           name: playwright-report-full
           path: playwright-report/
-          retention-days: 7
+          retention-days: 4
+
+      # Raw Allure JSON only — the HTML report is built in the publish-report job, which runs
+      # outside this container because generating it needs a JVM and this image has none.
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results/
+          retention-days: 1
 
       - name: Upload TestMart log
         if: failure()
@@ -99,7 +109,49 @@ jobs:
         with:
           name: testmart-log
           path: testmart.log
-          retention-days: 7
+          retention-days: 4
+
+  publish-report:
+    name: Publish Allure report to Pages
+    needs: full-suite
+    if: always() && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout tests
+        uses: actions/checkout@v4
+
+      - name: Checkout gh-pages for Allure history
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      - name: Download Allure results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: allure-results
+          path: allure-results
+
+      - name: Restore history
+        run: '[ -d gh-pages/history ] && cp -r gh-pages/history allure-results/ || true'
+
+      - name: Generate Allure report
+        if: hashFiles('allure-results/*') != ''
+        run: npx --yes allure-commandline generate allure-results --clean -o allure-report
+
+      - name: Deploy to GitHub Pages
+        if: hashFiles('allure-results/*') != ''
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: allure-report
 
   smoke-render:
     name: Smoke (deployed on Render)
@@ -148,4 +200,4 @@ jobs:
         with:
           name: playwright-report-smoke
           path: playwright-report/
-          retention-days: 7
+          retention-days: 4
