@@ -19,7 +19,11 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: 2,
-  reporter: 'html',
+  reporter: process.env.CI
+   ? [['github'], ['html'], ['allure-playwright']]
+    : process.env.ALLURE
+     ? [['html'], ['allure-playwright']]
+      : [['html']],
   use: {
     baseURL: process.env.BASE_URL ?? 'http://localhost:5173',
     trace: 'retain-on-failure',
@@ -48,11 +52,4 @@ export default defineConfig({
       testIgnore: '**/visual/**',
     },
   ],
-
-  /* Run your local dev server before starting the tests */
-  // webServer: {
-  //   command: 'npm run start',
-  //   url: 'http://localhost:3000',
-  //   reuseExistingServer: !process.env.CI,
-  // },
 });
