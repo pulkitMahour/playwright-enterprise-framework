@@ -119,32 +119,71 @@ per browser would be pure waste:
 ### Project structure
 
 ```
-pages/                 Page Objects — locators + actions, NO assertions
-  BasePage.ts          nav, search and cart helpers every page inherits
-  LoginPage.ts  RegisterPage.ts  HomePage.ts  ProductPage.ts  CartPage.ts
-  CheckoutPage.ts  OrderPage.ts  ProfilePage.ts  AdminPage.ts
-api/                   typed clients over Playwright's APIRequestContext
-  BaseAPI.ts           url() + the shared request context
-  AuthAPI.ts  ProductAPI.ts  OrderAPI.ts  UserAPI.ts
-fixtures/
-  base.fixture.ts      TEST_ROLE resolution, worker-scoped browser contexts
-                       (authenticatedContext / adminContext / userContext), adminApi
-  auth.fixture.ts      customLogin, customRegister, freshUserContext; re-exports expect
-  api.fixture.ts       userRequest / adminRequest API contexts
-  testData.ts          credentialsFor, loginViaApi, createProduct, deleteProduct,
-                       deleteOrders, deleteUsers, … — provisioning and cleanup
-data/                  data-driven cases, kept out of the specs
-  shipping.ts          free-shipping boundaries + checkout totals (literal expectations)
-  search.ts  addresses.ts  auth.ts  users.ts  products.ts  types.ts
-tests/api/             auth, products, orders, users — 89 tests, no browser
-tests/ui/              auth, catalog, cart, checkout, orders, profile, admin, visual
-scripts/visual.sh      runs the visual tests in the CI container image
-.github/workflows/     playwright.yml — full suite, Allure publish, Render smoke
-playwright.config.ts   4 projects, BASE_URL-driven, reporters, workers 2
+.
+├── tests/
+│   ├── api/                auth · products · orders · users
+│   └── ui/                 auth · catalog · cart · checkout · orders · profile · admin · visual
+├── pages/                  10 Page Objects
+├── api/                    5 API clients
+├── fixtures/               4 files
+├── data/                   7 files
+├── scripts/visual.sh
+├── .github/workflows/playwright.yml
+└── playwright.config.ts
 ```
+
+| Directory | Holds | The rule |
+|---|---|---|
+| `tests/` | The 292 specs, split `api/` and `ui/` | **Every assertion lives here** |
+| `pages/` | `BasePage` (nav, search and cart helpers all pages inherit) + one Page Object per route | Locators and actions only — **never an assertion** |
+| `api/` | `BaseAPI` (`url()` + the shared request context) + `AuthAPI`, `ProductAPI`, `OrderAPI`, `UserAPI` | Typed wrappers over Playwright's `APIRequestContext` |
+| `fixtures/` | `base.fixture` (`TEST_ROLE`, worker-scoped contexts, `adminApi`), `auth.fixture` (`customLogin`, `customRegister`, `freshUserContext`), `api.fixture` (`userRequest` / `adminRequest`), `testData` (provisioning + cleanup) | Set up state and hand it to the test; also re-export `expect` |
+| `data/` | `shipping.ts` (free-shipping boundaries and checkout totals as literal expectations), plus `search`, `addresses`, `auth`, `users`, `products`, `types` | Data-driven cases, kept out of the specs |
 
 `auth.fixture` and `api.fixture` both `extend` the `test` from `base.fixture`, so `adminApi` is
 defined once and every spec inherits it.
+
+*"Worker-scoped" means the fixture is created once per parallel worker rather than once per test — so
+logging in happens a handful of times for the whole run, not 292 times.*
+
+### What a test looks like
+
+Two tests from the login suite. They use the two patterns the whole suite is built from — one starts
+from an authenticated session, the other has to run logged out.
+
+```ts
+// tests/ui/auth/login.spec.ts
+test.describe('Login Page', { tag: ['@auth'] }, () => {
+
+    // customLogin logs in before the body runs, so this starts on a live session
+    customLogin('Login test with valid credentials', { tag: '@smoke' }, async ({ page, loginFixture }) => {
+        await expect(page).toHaveURL('/');
+        await expect(loginFixture.navbar_name).toHaveText('John Doe');
+        await expect(loginFixture.nav_admin).toBeHidden();
+    });
+
+    // the plain `test` from @playwright/test — this case must run logged out
+    test('Login test with invalid credentials', async ({ page }) => {
+        const loginPage = new LoginPage(page);
+        await loginPage.gotoLoginPage();
+        await loginPage.login('invalid@demo.com', 'invalid123');
+
+        await expect(loginPage.loginError).toHaveText('Invalid email or password');
+        await expect(page).toHaveURL('/login');
+    });
+});
+```
+
+Four things in there are the whole convention set in miniature:
+
+- **Every `expect` is in the spec.** `LoginPage` supplies `gotoLoginPage()`, `login()` and the
+  `loginError` locator — it never asserts anything itself.
+- **The fixture replaces setup, not assertions.** `customLogin` handles logging in; the test body is
+  only about what should now be true.
+- **Tags sit on two levels** — the area (`@auth`) on the describe, the tier (`@smoke`) on the
+  individual test. That is what makes `--grep @smoke` a coherent subset.
+- **URLs are `baseURL`-relative** (`'/'`, `'/login'`), so the same spec runs against localhost or the
+  deployed app with nothing but an env var changed.
 
 ## Tags and suite tiers
 
