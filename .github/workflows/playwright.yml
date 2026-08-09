@@ -85,6 +85,35 @@ jobs:
           HOME: /root
         run: npx playwright test
 
+      # Fills the Allure dashboard's Environment and Executors widgets. The `-d` guard matters:
+      # creating the dir with no results would defeat the hashFiles gate in publish-report.
+      - name: Add Allure environment and executor metadata
+        if: always()
+        run: |
+          [ -d allure-results ] || { echo "no allure-results — nothing to annotate"; exit 0; }
+          {
+            echo "BASE_URL=${BASE_URL}"
+            echo "Branch=${GITHUB_REF_NAME}"
+            echo "Commit=${GITHUB_SHA:0:7}"
+            echo "Playwright=$(npx playwright --version | sed 's/^Version //')"
+            echo "Node=$(node -v)"
+            echo "Image=mcr.microsoft.com/playwright:v1.62.0-noble"
+            echo "Projects=api, chromium, firefox, webkit"
+            echo "Workers=2"
+          } > allure-results/environment.properties
+          cat > allure-results/executor.json <<EOF
+          {
+            "name": "GitHub Actions",
+            "type": "github",
+            "reportName": "Playwright full suite",
+            "buildOrder": ${GITHUB_RUN_NUMBER},
+            "buildName": "playwright.yml #${GITHUB_RUN_NUMBER}",
+            "buildUrl": "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}",
+            "reportUrl": "https://pulkitmahour.github.io/playwright-enterprise-framework/"
+          }
+          EOF
+          cat allure-results/environment.properties
+
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4
@@ -93,8 +122,7 @@ jobs:
           path: playwright-report/
           retention-days: 4
 
-      # Raw Allure JSON only — the HTML report is built in the publish-report job, which runs
-      # outside this container because generating it needs a JVM and this image has none.
+      # Raw JSON only — the HTML report is built in publish-report, which has a JVM.
       - name: Upload Allure results
         if: always()
         uses: actions/upload-artifact@v4

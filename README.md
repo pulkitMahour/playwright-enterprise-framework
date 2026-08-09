@@ -11,6 +11,8 @@ regression, and CI that boots the application under test from scratch.
 📊 **[Live Allure report](https://pulkitmahour.github.io/playwright-enterprise-framework/)** — published
 from `main` on every push, with pass-rate trends across runs.
 
+[![Allure report — 292 test cases, 100% passing](docs/images/allure-dashboard.png)](https://pulkitmahour.github.io/playwright-enterprise-framework/)
+
 ---
 
 ## The system under test lives in another repo
@@ -284,6 +286,11 @@ npm run test:report
 This is the **developer-facing** report — it answers *why did this test fail*, and it embeds traces.
 In CI it is uploaded as the `playwright-report-full` artifact (4-day retention).
 
+![Playwright HTML report — 292 passed, tests grouped by spec file with tier and area tags](docs/images/playwright-report.png)
+
+Each row carries its project name and its tags, so `@smoke` / `@sanity` and the area tags are visible
+at a glance — the screenshot above is the real report from the latest `main` run.
+
 ### Allure report
 
 Allure is the **dashboard-facing** report — pass-rate trends across runs, grouping, and history that
@@ -307,6 +314,10 @@ Two things to know:
 In CI, the Allure report is published to GitHub Pages from `main` and the raw `allure-results` are
 kept for a single day as an intermediate. Trends come from carrying the previous report's `history/`
 folder forward off the `gh-pages` branch.
+
+The CI run also stamps `environment.properties` and `executor.json` into the results, so the published
+dashboard records **which** environment produced it — `BASE_URL`, branch, commit, Playwright and Node
+versions — and links straight back to the workflow run that built it.
 
 ### Debugging a failure with the trace viewer
 
