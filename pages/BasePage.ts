@@ -1,4 +1,4 @@
-import { Page, Locator } from "@playwright/test";
+import { Page, Locator } from '@playwright/test';
 
 export class BasePage {
     readonly page: Page;
@@ -29,15 +29,15 @@ export class BasePage {
         this.add_to_cart_success = page.getByText('Added');
         this.nav_brand = page.getByTestId('nav-brand');
         this.product_card = page.getByTestId('product-card');
-        this.nav_cart = page.getByTestId('nav-cart')
+        this.nav_cart = page.getByTestId('nav-cart');
         this.nav_cart_count = page.getByTestId('nav-cart-count');
         this.search = page.getByLabel('Search products');
-        this.search_submit = page.getByTestId('search-submit')
+        this.search_submit = page.getByTestId('search-submit');
         this.cart_checkout = page.getByTestId('cart-checkout');
         this.cart_clear = page.getByTestId('cart-clear');
         this.nav_orders = page.getByTestId('nav-orders');
         this.order_detail = page.getByTestId('order-detail');
-        this.nav_profile = page.getByTestId('nav-profile')
+        this.nav_profile = page.getByTestId('nav-profile');
         this.logoutButton = page.getByTestId('nav-logout');
         this.loginStatusButton = page.getByTestId('nav-login');
         this.checkout_place_order = page.getByTestId('checkout-place-order');
@@ -58,8 +58,8 @@ export class BasePage {
 
     async addToCart(productName: string) {
         await this.searchProduct(productName);
-        const product = this.product_card.filter({ hasText: productName })
-        await product.getByRole('button', { name: 'Add to cart' }).click()
+        const product = this.product_card.filter({ hasText: productName });
+        await product.getByRole('button', { name: 'Add to cart' }).click();
     }
 
     async goToCart() {

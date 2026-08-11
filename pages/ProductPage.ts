@@ -1,5 +1,5 @@
-import { Page, Locator } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { Page, Locator } from '@playwright/test';
+import { BasePage } from './BasePage';
 
 export class ProductPage extends BasePage {
     readonly product_detail: Locator;
@@ -11,7 +11,6 @@ export class ProductPage extends BasePage {
     readonly product_qty: Locator;
     readonly product_card_title: Locator;
     readonly empty_state: Locator;
-
 
     constructor(page: Page) {
         super(page);

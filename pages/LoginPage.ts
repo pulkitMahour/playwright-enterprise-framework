@@ -1,5 +1,5 @@
-import { Page, Locator } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { Page, Locator } from '@playwright/test';
+import { BasePage } from './BasePage';
 
 export class LoginPage extends BasePage {
     readonly email: Locator;
@@ -11,21 +11,21 @@ export class LoginPage extends BasePage {
 
     constructor(page: Page) {
         super(page);
-        this.email = page.getByTestId("login-email");
-        this.password = page.getByTestId("login-password");
-        this.loginButton = page.getByTestId("login-submit");
+        this.email = page.getByTestId('login-email');
+        this.password = page.getByTestId('login-password');
+        this.loginButton = page.getByTestId('login-submit');
         this.loginError = page.getByTestId('login-error');
-        this.loginSuccess = page.getByText('Welcome back')
+        this.loginSuccess = page.getByText('Welcome back');
         this.logoutSuccess = page.getByText('Logged out');
     }
 
     async gotoLoginPage() {
-        await this.goto('/login')
+        await this.goto('/login');
     }
 
     async login(email: string, password: string) {
         await this.email.fill(email);
-        await this.password.fill(password)
+        await this.password.fill(password);
         await this.loginButton.click();
     }
 }

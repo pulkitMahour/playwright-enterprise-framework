@@ -22,4 +22,4 @@ export class CartPage extends BasePage {
         this.cart_item_name = page.getByTestId('cart-item-name');
         this.cart_item_price = page.getByTestId('cart-item-price');
     }
-};
+}

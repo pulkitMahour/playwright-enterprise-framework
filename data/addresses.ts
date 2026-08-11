@@ -72,7 +72,12 @@ const SINGLE_CHARS: AddressCase = {
 };
 
 export const ADDRESS_CASES: readonly AddressCase[] = [
-    ASCII, PUNCTUATION, ACCENTED, NON_LATIN, LONG_VALUES, SINGLE_CHARS,
+    ASCII,
+    PUNCTUATION,
+    ACCENTED,
+    NON_LATIN,
+    LONG_VALUES,
+    SINGLE_CHARS,
 ];
 
 export const UI_ADDRESS_CASES: readonly AddressCase[] = [PUNCTUATION, ACCENTED, NON_LATIN];

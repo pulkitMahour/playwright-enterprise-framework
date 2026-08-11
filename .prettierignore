@@ -1,0 +1,7 @@
+package-lock.json
+allure-results/
+allure-report/
+playwright-report/
+blob-report/
+test-results/
+plan/

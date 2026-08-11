@@ -1,7 +1,6 @@
 import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
-
 export class HomePage extends BasePage {
     readonly category_filter: Locator;
     readonly product_sort: Locator;
@@ -27,6 +26,6 @@ export class HomePage extends BasePage {
     }
 
     async gotoHomePage() {
-        await this.goto('/')
+        await this.goto('/');
     }
-};
+}

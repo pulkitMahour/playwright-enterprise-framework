@@ -1,6 +1,6 @@
-import { Page, Locator } from "@playwright/test";
-import { BasePage } from "./BasePage";
-import { CheckoutPage } from "./CheckoutPage";
+import { Page, Locator } from '@playwright/test';
+import { BasePage } from './BasePage';
+import { CheckoutPage } from './CheckoutPage';
 
 export class OrderPage extends BasePage {
     readonly page: Page;
@@ -33,7 +33,7 @@ export class OrderPage extends BasePage {
     }
 
     async placeOrder(orderShipping: {
-        product: string,
+        product: string;
         fullName: string;
         street: string;
         city: string;
@@ -47,5 +47,4 @@ export class OrderPage extends BasePage {
         await checkoutPage.fillShippingAddress(orderShipping);
         await checkoutPage.checkout_place_order.click();
     }
-
 }

@@ -24,7 +24,6 @@ export class ProductAPI extends BaseAPI {
         return this.request.get(this.url(`/products/${id}`));
     }
 
-
     async create(data: unknown): Promise<APIResponse> {
         return this.request.post(this.url('/admin/products'), { data });
     }
@@ -39,7 +38,5 @@ export class ProductAPI extends BaseAPI {
 }
 
 function toParams(query: ProductQuery): QueryParams {
-    return Object.fromEntries(
-        Object.entries(query).filter(([, value]) => value !== undefined),
-    ) as QueryParams;
+    return Object.fromEntries(Object.entries(query).filter(([, value]) => value !== undefined));
 }

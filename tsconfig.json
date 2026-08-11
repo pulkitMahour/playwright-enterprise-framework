@@ -11,5 +11,12 @@
         "forceConsistentCasingInFileNames": true,
         "noEmit": true
     },
-    "include": ["fixtures/**/*.ts", "pages/**/*.ts", "tests/**/*.ts", "playwright.config.ts"]
+    "include": [
+        "api/**/*.ts",
+        "data/**/*.ts",
+        "fixtures/**/*.ts",
+        "pages/**/*.ts",
+        "tests/**/*.ts",
+        "playwright.config.ts"
+    ]
 }

@@ -1,7 +1,13 @@
 import { type Page } from '@playwright/test';
 import { test, expect } from '../../../fixtures/base.fixture';
 import { AdminPage } from '../../../pages/AdminPage';
-import { createProduct, deleteProduct, deleteOrders, deleteProductsByName, TestProduct } from '../../../fixtures/testData';
+import {
+    createProduct,
+    deleteProduct,
+    deleteOrders,
+    deleteProductsByName,
+    TestProduct,
+} from '../../../fixtures/testData';
 
 const NEW_PRODUCT = {
     name: `Test Product ${Date.now()}`,
@@ -10,11 +16,11 @@ const NEW_PRODUCT = {
     price: 99.99,
     stock: 10,
     image: '/images/placeholder.svg',
-    featured: true
+    featured: true,
 };
 
 test.describe('Admin Page', { tag: ['@admin'] }, () => {
-    test.describe.configure({ mode: 'serial' })
+    test.describe.configure({ mode: 'serial' });
 
     let page: Page;
     let adminPage: AdminPage;
@@ -79,8 +85,12 @@ test.describe('Admin Page', { tag: ['@admin'] }, () => {
             await adminPage.fillProductForm(updatedProduct);
             await adminPage.product_form_submit.click();
 
-            await expect(productRow.locator('td').nth(2)).toHaveText(`$${updatedProduct.price.toFixed(2)}`);
-            await expect(productRow.locator('td').nth(3)).toHaveText(updatedProduct.stock.toString());
+            await expect(productRow.locator('td').nth(2)).toHaveText(
+                `$${updatedProduct.price.toFixed(2)}`,
+            );
+            await expect(productRow.locator('td').nth(3)).toHaveText(
+                updatedProduct.stock.toString(),
+            );
         });
 
         test('Verify product deletion', { tag: '@sanity' }, async () => {
@@ -89,7 +99,7 @@ test.describe('Admin Page', { tag: ['@admin'] }, () => {
             await expect(productRow).toBeVisible();
             const deleteButton = productRow.getByTestId('admin-product-delete');
 
-            page.once('dialog', async dialog => {
+            page.once('dialog', async (dialog) => {
                 expect(dialog.message()).toContain(NEW_PRODUCT.name);
                 await dialog.accept();
             });
@@ -102,14 +112,18 @@ test.describe('Admin Page', { tag: ['@admin'] }, () => {
             await adminPage.product_create.click();
             await adminPage.fillProductForm({ ...NEW_PRODUCT, name: 'a' });
             await adminPage.product_form_submit.click();
-            await expect(adminPage.product_form_error).toHaveText('name must be longer than or equal to 2 characters');
+            await expect(adminPage.product_form_error).toHaveText(
+                'name must be longer than or equal to 2 characters',
+            );
         });
 
         test('Verify seeded product cannot be deleted', async () => {
             await adminPage.admin_nav_products.click();
             const seededProductRow = adminPage.rowFor('Raptor Gaming Mouse');
             await expect(seededProductRow).toBeVisible();
-            await expect(seededProductRow.getByTestId('admin-product-seed-tag')).toHaveText('default');
+            await expect(seededProductRow.getByTestId('admin-product-seed-tag')).toHaveText(
+                'default',
+            );
             await expect(seededProductRow.getByTestId('admin-product-delete')).toBeDisabled();
         });
     });

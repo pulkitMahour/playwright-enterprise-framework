@@ -2,15 +2,15 @@ import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class AdminPage extends BasePage {
-    readonly admin_nav : Locator;
-    readonly admin_nav_dashboard : Locator;
-    readonly admin_nav_products : Locator;
-    readonly admin_nav_orders : Locator;
-    readonly admin_nav_users : Locator;
-    readonly admin_stat_users : Locator;
-    readonly admin_stat_products : Locator;
-    readonly admin_stat_orders : Locator;
-    readonly admin_stat_revenue : Locator;
+    readonly admin_nav: Locator;
+    readonly admin_nav_dashboard: Locator;
+    readonly admin_nav_products: Locator;
+    readonly admin_nav_orders: Locator;
+    readonly admin_nav_users: Locator;
+    readonly admin_stat_users: Locator;
+    readonly admin_stat_products: Locator;
+    readonly admin_stat_orders: Locator;
+    readonly admin_stat_revenue: Locator;
     readonly admin_products_table: Locator;
     readonly admin_product_row: Locator;
     readonly product_create: Locator;
@@ -30,7 +30,7 @@ export class AdminPage extends BasePage {
     readonly admin_user_row: Locator;
     readonly admin_user_delete: Locator;
 
-    constructor(page: Page){
+    constructor(page: Page) {
         super(page);
         this.admin_nav = page.getByTestId('admin-nav');
         this.admin_nav_dashboard = this.admin_nav.getByTestId('admin-nav-dashboard');
@@ -85,5 +85,5 @@ export class AdminPage extends BasePage {
         } else {
             await this.product_form_featured.uncheck();
         }
-    };
+    }
 }
