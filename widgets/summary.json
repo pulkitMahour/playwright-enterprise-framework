@@ -1,1 +1,1 @@
-{"reportName":"Playwright full suite","testRuns":[],"statistic":{"failed":0,"broken":0,"skipped":0,"passed":292,"unknown":0,"total":292},"time":{"start":1786299172337,"stop":1786299377172,"duration":204835,"minDuration":8,"maxDuration":5260,"sumDuration":307732}}
+{"reportName":"Playwright full suite","testRuns":[],"statistic":{"failed":0,"broken":0,"skipped":0,"passed":292,"unknown":0,"total":292},"time":{"start":1786447300256,"stop":1786447510329,"duration":210073,"minDuration":8,"maxDuration":5743,"sumDuration":325267}}
