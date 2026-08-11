@@ -3,7 +3,12 @@ import { test, expect } from '../../../fixtures/auth.fixture';
 import { test as userSession } from '../../../fixtures/base.fixture';
 import { OrderPage } from '../../../pages/OrderPage';
 import { CheckoutPage } from '../../../pages/CheckoutPage';
-import { createProduct, deleteProduct, deleteOrders, TestProduct } from '../../../fixtures/testData';
+import {
+    createProduct,
+    deleteProduct,
+    deleteOrders,
+    TestProduct,
+} from '../../../fixtures/testData';
 
 const shippingAddress = {
     fullName: 'Test User',
@@ -16,7 +21,7 @@ const shippingAddress = {
 const EXPECTED_QTY = 1;
 
 test.describe('Order Page', { tag: ['@orders'] }, () => {
-    test.describe.configure({ mode: 'serial' })
+    test.describe.configure({ mode: 'serial' });
     let page: Page;
     let orderPage: OrderPage;
     let checkoutPage: CheckoutPage;
@@ -32,19 +37,19 @@ test.describe('Order Page', { tag: ['@orders'] }, () => {
         checkoutPage = new CheckoutPage(page);
     });
 
-    test.afterAll(async ({ adminApi }) => {
-        await deleteOrders(adminApi, id ? [id] : []);
-        await deleteProduct(adminApi, product._id);
-    });
-
     test.beforeEach(async () => {
         orderPage = new OrderPage(page);
         await orderPage.goto('/');
     });
 
+    test.afterAll(async ({ adminApi }) => {
+        await deleteOrders(adminApi, id ? [id] : []);
+        await deleteProduct(adminApi, product._id);
+    });
+
     test('Empty Order State', async () => {
         // must run before any order is placed
-        await orderPage.nav_orders.click()
+        await orderPage.nav_orders.click();
         await expect(orderPage.orders_empty).toBeVisible();
         await expect(orderPage.orders_empty).toHaveText('You have no orders yet. Start shopping');
     });
@@ -61,10 +66,13 @@ test.describe('Order Page', { tag: ['@orders'] }, () => {
     test('Verify the placed order details', async () => {
         await orderPage.nav_orders.click();
         if (!id) throw new Error('Order ID not found');
-        await orderPage.orders_table.locator(`[data-order-id="${id}"]`).getByTestId('order-view').click();
+        await orderPage.orders_table
+            .locator(`[data-order-id="${id}"]`)
+            .getByTestId('order-view')
+            .click();
 
         await expect(orderPage.order_detail).toBeVisible();
-        await expect(orderPage.order_detail).toHaveAttribute('data-order-id', id)
+        await expect(orderPage.order_detail).toHaveAttribute('data-order-id', id);
 
         const item = orderPage.itemFor(product.name);
         await expect(item).toBeVisible();
@@ -85,7 +93,6 @@ test.describe('Order Page', { tag: ['@orders'] }, () => {
     });
 });
 
-
 userSession.describe('Order Page - Network Failures', { tag: ['@orders'] }, () => {
     let page: Page;
     let orderPage: OrderPage;
@@ -94,11 +101,6 @@ userSession.describe('Order Page - Network Failures', { tag: ['@orders'] }, () =
 
     userSession.beforeAll(async ({ adminApi }) => {
         product = await createProduct(adminApi);
-    });
-
-    userSession.afterAll(async ({ adminApi }) => {
-        await deleteOrders(adminApi, createdOrders);
-        await deleteProduct(adminApi, product._id);
     });
 
     userSession.beforeEach(async ({ userContext }) => {
@@ -118,14 +120,22 @@ userSession.describe('Order Page - Network Failures', { tag: ['@orders'] }, () =
         await page.close();
     });
 
+    userSession.afterAll(async ({ adminApi }) => {
+        await deleteOrders(adminApi, createdOrders);
+        await deleteProduct(adminApi, product._id);
+    });
+
     userSession('Should display the empty state when the orders API returns 500', async () => {
-        await page.route((url) => url.pathname === '/api/orders/mine', async (route) => {
-            await route.fulfill({
-                status: 500,
-                contentType: 'application/json',
-                body: JSON.stringify({ error: 'Internal Server Error' }),
-            });
-        });
+        await page.route(
+            (url) => url.pathname === '/api/orders/mine',
+            async (route) => {
+                await route.fulfill({
+                    status: 500,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ error: 'Internal Server Error' }),
+                });
+            },
+        );
 
         await orderPage.nav_orders.click();
         await expect(orderPage.orders_empty).toHaveText('You have no orders yet. Start shopping');

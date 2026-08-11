@@ -3,7 +3,12 @@ import { test, expect } from '../../../fixtures/base.fixture';
 import { CheckoutPage } from '../../../pages/CheckoutPage';
 import { CHECKOUT_SUMMARY_CASES, DEFAULT_CART_PRODUCT } from '../../../data/shipping';
 import { UI_ADDRESS_CASES, DEFAULT_SHIPPING_ADDRESS } from '../../../data/addresses';
-import { createProduct, deleteProduct, deleteOrders, TestProduct } from '../../../fixtures/testData';
+import {
+    createProduct,
+    deleteProduct,
+    deleteOrders,
+    TestProduct,
+} from '../../../fixtures/testData';
 
 test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
     let page: Page;
@@ -18,16 +23,17 @@ test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
         await page.addInitScript(() => localStorage.removeItem('testmart_cart'));
         await page.goto('/');
         await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
-    })
+    });
+
+    test.beforeEach(() => {
+        checkoutPage = new CheckoutPage(page);
+    });
 
     test.afterAll(async ({ adminApi }) => {
         await deleteOrders(adminApi, createdOrders);
         await deleteProduct(adminApi, orderProduct._id);
-    })
+    });
 
-    test.beforeEach(async () => {
-        checkoutPage = new CheckoutPage(page);
-    })
     async function checkoutWith(product: string) {
         await checkoutPage.goto('/');
         await checkoutPage.addToCart(product);
@@ -41,9 +47,11 @@ test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
 
         await expect(checkoutPage.checkout_form).toBeVisible();
         await checkoutPage.fillShippingAddress(DEFAULT_SHIPPING_ADDRESS);
-        await expect(checkoutPage.payment_note).toHaveText('Mock payment — no card required. Your order is marked paid instantly.')
+        await expect(checkoutPage.payment_note).toHaveText(
+            'Mock payment — no card required. Your order is marked paid instantly.',
+        );
         await expect(checkoutPage.checkout_summary).toBeVisible();
-    })
+    });
 
     for (const summary of CHECKOUT_SUMMARY_CASES) {
         test(`Summary totals ${summary.label}`, { tag: '@sanity' }, async () => {
@@ -51,9 +59,13 @@ test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
 
             await expect(checkoutPage.summary_items).toHaveText(`$${summary.price.toFixed(2)}`);
             await expect(checkoutPage.summary_tax).toHaveText(`$${summary.expectedTax.toFixed(2)}`);
-            await expect(checkoutPage.summary_shipping).toHaveText(`$${summary.expectedShipping.toFixed(2)}`);
-            await expect(checkoutPage.summary_total).toHaveText(`$${summary.expectedTotal.toFixed(2)}`);
-        })
+            await expect(checkoutPage.summary_shipping).toHaveText(
+                `$${summary.expectedShipping.toFixed(2)}`,
+            );
+            await expect(checkoutPage.summary_total).toHaveText(
+                `$${summary.expectedTotal.toFixed(2)}`,
+            );
+        });
     }
 
     for (const { label, address } of UI_ADDRESS_CASES) {
@@ -73,7 +85,7 @@ test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
                 await expect(field).toHaveValue(value);
                 await expect(field).toHaveJSProperty('validity.valid', true);
             }
-        })
+        });
     }
 
     test('Place order verification', { tag: '@smoke' }, async () => {
@@ -89,7 +101,7 @@ test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
         createdOrders.push(orderId);
         await expect(checkoutPage.order_detail).toHaveAttribute('data-order-id', orderId);
         await expect(checkoutPage.nav_cart_count).toBeHidden();
-    })
+    });
 
     test('Missing address field', async () => {
         await checkoutWith(DEFAULT_CART_PRODUCT);
@@ -98,7 +110,7 @@ test.describe('Checkout Page', { tag: ['@checkout'] }, () => {
         await checkoutPage.checkout_place_order.click();
         await expect(checkoutPage.checkout_street).toHaveJSProperty('validity.valueMissing', true);
         await expect(page).toHaveURL('/checkout');
-    })
+    });
 });
 
 test.describe('Checkout Page - Order Failures', { tag: ['@checkout'] }, () => {
@@ -124,15 +136,18 @@ test.describe('Checkout Page - Order Failures', { tag: ['@checkout'] }, () => {
     });
 
     async function failPlaceOrder(fulfill: { status: number; body: string } | 'abort') {
-        await page.route((url) => url.pathname === '/api/orders', async (route) => {
-            if (route.request().method() !== 'POST') return route.continue();
-            if (fulfill === 'abort') return route.abort('failed');
-            await route.fulfill({
-                status: fulfill.status,
-                contentType: 'application/json',
-                body: fulfill.body,
-            });
-        });
+        await page.route(
+            (url) => url.pathname === '/api/orders',
+            async (route) => {
+                if (route.request().method() !== 'POST') return route.continue();
+                if (fulfill === 'abort') return route.abort('failed');
+                await route.fulfill({
+                    status: fulfill.status,
+                    contentType: 'application/json',
+                    body: fulfill.body,
+                });
+            },
+        );
     }
 
     test('Should show the fallback error when placing an order fails with no message', async () => {

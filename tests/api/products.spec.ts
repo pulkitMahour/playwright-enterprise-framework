@@ -7,7 +7,7 @@ import { SEARCH_CASES, EMPTY_SEARCH_CASES } from '../../data/search';
 test.describe('Product Query Tests', { tag: ['@api', '@catalog'] }, () => {
     let productAPI: ProductAPI;
 
-    test.beforeEach(async ({ request }) => {
+    test.beforeEach(({ request }) => {
         productAPI = new ProductAPI(request);
     });
 
@@ -42,60 +42,74 @@ test.describe('Product Query Tests', { tag: ['@api', '@catalog'] }, () => {
         });
     }
 
-    test('Product Query: product category filter should return relevant products', { tag: '@sanity' }, async () => {
-        const category = 'Electronics';
-        const response = await productAPI.list({ category });
-        expect(response.status()).toBe(200);
-        const products = await response.json();
-        expect(Array.isArray(products.products)).toBe(true);
-        expect(products.products.length).toBeGreaterThan(0);
-        for (const product of products.products) {
-            expect(product.category).toBe(category);
-        }
-    });
+    test(
+        'Product Query: product category filter should return relevant products',
+        { tag: '@sanity' },
+        async () => {
+            const category = 'Electronics';
+            const response = await productAPI.list({ category });
+            expect(response.status()).toBe(200);
+            const products = await response.json();
+            expect(Array.isArray(products.products)).toBe(true);
+            expect(products.products.length).toBeGreaterThan(0);
+            for (const product of products.products) {
+                expect(product.category).toBe(category);
+            }
+        },
+    );
 
-    test('Product Query: product sorting should return products in correct order', { tag: '@sanity' }, async () => {
-        const sort = 'price-asc';
-        const response = await productAPI.list({ sort });
-        expect(response.status()).toBe(200);
-        const products = await response.json();
-        expect(Array.isArray(products.products)).toBe(true);
-        expect(products.products.length).toBeGreaterThan(0);
-        for (let i = 1; i < products.products.length; i++) {
-            expect(products.products[i].price).toBeGreaterThanOrEqual(products.products[i - 1].price);
-        }
-    });
+    test(
+        'Product Query: product sorting should return products in correct order',
+        { tag: '@sanity' },
+        async () => {
+            const sort = 'price-asc';
+            const response = await productAPI.list({ sort });
+            expect(response.status()).toBe(200);
+            const products = await response.json();
+            expect(Array.isArray(products.products)).toBe(true);
+            expect(products.products.length).toBeGreaterThan(0);
+            for (let i = 1; i < products.products.length; i++) {
+                expect(products.products[i].price).toBeGreaterThanOrEqual(
+                    products.products[i - 1].price,
+                );
+            }
+        },
+    );
 
-    test('Product Query: pagination should return a different slice per page', { tag: '@sanity' }, async () => {
-        const query = { sort: 'price-asc', limit: 5 };
-        const firstResponse = await productAPI.list({ ...query, page: 1 });
-        const secondResponse = await productAPI.list({ ...query, page: 2 });
-        expect(firstResponse.status()).toBe(200);
-        expect(secondResponse.status()).toBe(200);
+    test(
+        'Product Query: pagination should return a different slice per page',
+        { tag: '@sanity' },
+        async () => {
+            const query = { sort: 'price-asc', limit: 5 };
+            const firstResponse = await productAPI.list({ ...query, page: 1 });
+            const secondResponse = await productAPI.list({ ...query, page: 2 });
+            expect(firstResponse.status()).toBe(200);
+            expect(secondResponse.status()).toBe(200);
 
-        const firstPage = await firstResponse.json();
-        const secondPage = await secondResponse.json();
+            const firstPage = await firstResponse.json();
+            const secondPage = await secondResponse.json();
 
-        expect(firstPage.page).toBe(1);
-        expect(secondPage.page).toBe(2);
-        expect(firstPage.limit).toBe(query.limit);
-        expect(firstPage.total).toBe(secondPage.total);
-        expect(firstPage.pages).toBe(Math.ceil(firstPage.total / query.limit));
+            expect(firstPage.page).toBe(1);
+            expect(secondPage.page).toBe(2);
+            expect(firstPage.limit).toBe(query.limit);
+            expect(firstPage.total).toBe(secondPage.total);
+            expect(firstPage.pages).toBe(Math.ceil(firstPage.total / query.limit));
 
-        expect(firstPage.products).toHaveLength(query.limit);
-        expect(secondPage.products.length).toBeGreaterThan(0);
-        expect(secondPage.products.length).toBeLessThanOrEqual(query.limit);
+            expect(firstPage.products).toHaveLength(query.limit);
+            expect(secondPage.products.length).toBeGreaterThan(0);
+            expect(secondPage.products.length).toBeLessThanOrEqual(query.limit);
 
-        const lastOnFirstPage = firstPage.products[firstPage.products.length - 1].price;
-        expect(secondPage.products[0].price).toBeGreaterThanOrEqual(lastOnFirstPage);
-    });
+            const lastOnFirstPage = firstPage.products[firstPage.products.length - 1].price;
+            expect(secondPage.products[0].price).toBeGreaterThanOrEqual(lastOnFirstPage);
+        },
+    );
 
     test('Product Query: limit caps the page size', async () => {
         const response = await productAPI.list({ limit: 1 });
         expect(response.status()).toBe(200);
         const products = await response.json();
         expect(products.limit).toBe(1);
-        expect(products.products.length).toBe(1);
+        expect(products.products).toHaveLength(1);
     });
 
     test('Product Query: invalid sort value should be rejected', async () => {
@@ -133,7 +147,7 @@ adminContext.describe('Product Management Tests', { tag: ['@api', '@catalog', '@
     let productAPI: ProductAPI;
     let id: string;
 
-    adminContext.beforeEach(async ({ adminRequest }) => {
+    adminContext.beforeEach(({ adminRequest }) => {
         productAPI = new ProductAPI(adminRequest);
     });
 
@@ -165,7 +179,6 @@ adminContext.describe('Product Management Tests', { tag: ['@api', '@catalog', '@
         const getResponse = await productAPI.getById(id);
         expect(getResponse.status()).toBe(404);
     });
-
 });
 
 adminContext.describe('Product Create Validation', { tag: ['@api', '@catalog', '@admin'] }, () => {
@@ -181,7 +194,7 @@ adminContext.describe('Product Create Validation', { tag: ['@api', '@catalog', '
 test.describe('Product Management Tests (unauthenticated)', { tag: ['@api', '@catalog'] }, () => {
     let productAPI: ProductAPI;
 
-    test.beforeEach(async ({ request }) => {
+    test.beforeEach(({ request }) => {
         productAPI = new ProductAPI(request);
     });
 
@@ -191,15 +204,19 @@ test.describe('Product Management Tests (unauthenticated)', { tag: ['@api', '@ca
     });
 });
 
-userContext.describe('Product Management Tests (non-admin user)', { tag: ['@api', '@catalog'] }, () => {
-    let productAPI: ProductAPI;
+userContext.describe(
+    'Product Management Tests (non-admin user)',
+    { tag: ['@api', '@catalog'] },
+    () => {
+        let productAPI: ProductAPI;
 
-    userContext.beforeEach(async ({ userRequest }) => {
-        productAPI = new ProductAPI(userRequest);
-    });
+        userContext.beforeEach(({ userRequest }) => {
+            productAPI = new ProductAPI(userRequest);
+        });
 
-    userContext('non-admin should not create a product', async () => {
-        const response = await productAPI.create(validProduct());
-        expect(response.status()).toBe(403);
-    });
-});
+        userContext('non-admin should not create a product', async () => {
+            const response = await productAPI.create(validProduct());
+            expect(response.status()).toBe(403);
+        });
+    },
+);

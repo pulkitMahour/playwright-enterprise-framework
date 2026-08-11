@@ -7,7 +7,7 @@ import { deleteUsers } from '../../fixtures/testData';
 test.describe('Auth Login/Logout', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
 
-    test.beforeEach(async ({ request }) => {
+    test.beforeEach(({ request }) => {
         authAPI = new AuthAPI(request);
     });
 
@@ -52,7 +52,7 @@ test.describe('Auth Register', { tag: ['@api', '@auth'] }, () => {
     const id = Date.now();
     const createdUsers: string[] = [];
 
-    test.beforeEach(async ({ request }) => {
+    test.beforeEach(({ request }) => {
         authAPI = new AuthAPI(request);
     });
 
@@ -61,7 +61,11 @@ test.describe('Auth Register', { tag: ['@api', '@auth'] }, () => {
     });
 
     test('should register successfully with valid data', { tag: '@sanity' }, async () => {
-        const response = await authAPI.register(`New User ${id}`, `newuser${id}@demo.com`, 'newuser123');
+        const response = await authAPI.register(
+            `New User ${id}`,
+            `newuser${id}@demo.com`,
+            'newuser123',
+        );
         expect(response.status()).toBe(201);
         createdUsers.push((await response.json()).id);
     });
@@ -77,7 +81,7 @@ test.describe('Auth Register', { tag: ['@api', '@auth'] }, () => {
 test.describe('Auth Validation', { tag: ['@api', '@auth'] }, () => {
     let authAPI: AuthAPI;
 
-    test.beforeEach(async ({ request }) => {
+    test.beforeEach(({ request }) => {
         authAPI = new AuthAPI(request);
     });
 

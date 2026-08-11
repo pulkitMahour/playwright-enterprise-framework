@@ -19,7 +19,9 @@ async function registerFreshUser(context: APIRequestContext): Promise<FreshUser>
     const password = 'newuser123';
 
     const response = await new AuthAPI(context).register(
-        `New User ${stamp}`, `newuser${stamp}@demo.com`, password,
+        `New User ${stamp}`,
+        `newuser${stamp}@demo.com`,
+        password,
     );
     expect(response.status()).toBe(201);
 
@@ -30,7 +32,7 @@ test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
     const createdUsers: string[] = [];
 
-    test.beforeEach(async ({ request }) => {
+    test.beforeEach(({ request }) => {
         userAPI = new UserAPI(request);
     });
 
@@ -64,8 +66,8 @@ test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
         const updateProfile = {
             name: `Updated ${user.name}`,
             email: `updated${user.email}`,
-            password: 'updated123'
-        }
+            password: 'updated123',
+        };
 
         const response = await userAPI.updateProfileRaw(updateProfile);
         expect(response.status()).toBe(200);
@@ -83,7 +85,7 @@ test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
         // login with new password
         const loginNew = await authAPI.login(user.email, updateProfile.password);
         expect(loginNew.status()).toBe(200);
-    })
+    });
 
     test('should merge address fields instead of replacing the block', async ({ request }) => {
         const user = await registerFreshUser(request);
@@ -120,14 +122,13 @@ test.describe('User Profile', { tag: ['@api', '@profile'] }, () => {
         const stats = await userAPI.stats();
         expect(stats.status()).toBe(401);
     });
-
 });
 
 userContext.describe('Profile Update Validation', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
     const createdUsers: string[] = [];
 
-    userContext.beforeEach(async ({ userRequest }) => {
+    userContext.beforeEach(({ userRequest }) => {
         userAPI = new UserAPI(userRequest);
     });
 
@@ -171,7 +172,7 @@ userContext.describe('Profile Update Validation', { tag: ['@api', '@profile'] },
 userContext.describe('Default User', { tag: ['@api', '@profile'] }, () => {
     let userAPI: UserAPI;
 
-    userContext.beforeEach(async ({ userRequest }) => {
+    userContext.beforeEach(({ userRequest }) => {
         userAPI = new UserAPI(userRequest);
     });
 
@@ -188,15 +189,15 @@ userContext.describe('Default User', { tag: ['@api', '@profile'] }, () => {
 
         const stats = await userAPI.stats();
         expect(stats.status()).toBe(403);
-    })
+    });
 });
 
 adminContext.describe('Admin User Management', { tag: ['@api', '@profile', '@admin'] }, () => {
-    adminContext.describe.configure({ mode: "serial" });
+    adminContext.describe.configure({ mode: 'serial' });
     let userAPI: UserAPI;
     const createdUsers: string[] = [];
 
-    adminContext.beforeEach(async ({ adminRequest }) => {
+    adminContext.beforeEach(({ adminRequest }) => {
         userAPI = new UserAPI(adminRequest);
     });
 
@@ -235,25 +236,27 @@ adminContext.describe('Admin User Management', { tag: ['@api', '@profile', '@adm
         expect(responseBody).toHaveProperty('id', user_id);
     });
 
-    adminContext('should not remove the seeded user', async ( {userRequest} ) => {
+    adminContext('should not remove the seeded user', async ({ userRequest }) => {
         const userAccount = new UserAPI(userRequest);
         const userDetails = await userAccount.me();
         const userID = await userDetails.json();
 
         const remove = await userAPI.remove(userID.id);
         expect(remove.status()).toBe(403);
-
-    })
-
-    adminContext('admin should not be able to delete their own account', async ({ adminRequest }) => {
-        const ownProfile = await new UserAPI(adminRequest).me();
-        const { id } = await ownProfile.json();
-
-        const response = await userAPI.remove(id);
-        expect(response.status()).toBe(400);
-        expect((await response.json()).message).toContain('You cannot delete your own account');
-
-        const stillThere = await new UserAPI(adminRequest).me();
-        expect(stillThere.status()).toBe(200);
     });
+
+    adminContext(
+        'admin should not be able to delete their own account',
+        async ({ adminRequest }) => {
+            const ownProfile = await new UserAPI(adminRequest).me();
+            const { id } = await ownProfile.json();
+
+            const response = await userAPI.remove(id);
+            expect(response.status()).toBe(400);
+            expect((await response.json()).message).toContain('You cannot delete your own account');
+
+            const stillThere = await new UserAPI(adminRequest).me();
+            expect(stillThere.status()).toBe(200);
+        },
+    );
 });

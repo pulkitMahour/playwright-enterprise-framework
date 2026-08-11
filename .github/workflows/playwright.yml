@@ -15,6 +15,33 @@ env:
   ADMIN_PASSWORD: admin123
 
 jobs:
+  quality:
+    name: Quality gates (types, lint, format)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout tests
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install test dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
+
   full-suite:
     name: Full suite (TestMart booted in-job)
     if: github.event_name != 'schedule'
@@ -85,8 +112,7 @@ jobs:
           HOME: /root
         run: npx playwright test
 
-      # Fills the Allure dashboard's Environment and Executors widgets. The `-d` guard matters:
-      # creating the dir with no results would defeat the hashFiles gate in publish-report.
+      # Fills the Allure dashboard's Environment and Executors widgets. The `-d` guard matters: creating the dir with no results would defeat the hashFiles gate in publish-report.
       - name: Add Allure environment and executor metadata
         if: always()
         shell: bash

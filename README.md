@@ -57,20 +57,23 @@ BASE_URL=https://testmart-gvcc.onrender.com npm run test:smoke
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `npm test` | All 292 tests, all four projects |
-| `npm run test:smoke` | `@smoke` — 39 tests, the CI gate |
-| `npm run test:sanity` | `@smoke` + `@sanity` — 140 tests |
-| `npm run test:regression` | Everything (same as `npm test`) |
-| `npm run test:api` | `--project=api` — 89 tests, no browser launched |
-| `npm run test:ui` | `tests/ui` across the three browsers |
-| `npm run test:admin` / `test:checkout` | Single area, by tag |
-| `npm run test:headed` / `test:debug` | Headed run / Playwright Inspector |
-| `npm run test:report` | Open the last Playwright HTML report |
-| `npm run test:allure` | Run with the Allure reporter (see [Reports](#reports)) |
-| `npm run test:visual` | Visual tests, in Docker (see [Visual testing](#visual-testing)) |
-| `npm run typecheck` | `tsc --noEmit` |
+| Command                                | What it does                                                         |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| `npm test`                             | All 292 tests, all four projects                                     |
+| `npm run test:smoke`                   | `@smoke` — 39 tests, the CI gate                                     |
+| `npm run test:sanity`                  | `@smoke` + `@sanity` — 140 tests                                     |
+| `npm run test:regression`              | Everything (same as `npm test`)                                      |
+| `npm run test:api`                     | `--project=api` — 89 tests, no browser launched                      |
+| `npm run test:ui`                      | `tests/ui` across the three browsers                                 |
+| `npm run test:admin` / `test:checkout` | Single area, by tag                                                  |
+| `npm run test:headed` / `test:debug`   | Headed run / Playwright Inspector                                    |
+| `npm run test:report`                  | Open the last Playwright HTML report                                 |
+| `npm run test:allure`                  | Run with the Allure reporter (see [Reports](#reports))               |
+| `npm run test:visual`                  | Visual tests, in Docker (see [Visual testing](#visual-testing))      |
+| `npm run typecheck`                    | `tsc --noEmit`                                                       |
+| `npm run lint`                         | ESLint, `--max-warnings=0` (see [Static analysis](#static-analysis)) |
+| `npm run lint:fix`                     | ESLint with `--fix`                                                  |
+| `npm run format` / `format:check`      | Prettier write / check                                               |
 
 ## Architecture
 
@@ -110,13 +113,13 @@ flowchart LR
 Four projects. API tests use the `request` fixture and never launch a browser, so running them once
 per browser would be pure waste:
 
-| Project | Tests | Notes |
-|---|---:|---|
-| `api` | 89 | No browser, runs once |
-| `chromium` | 71 | Includes the 5 `@visual` tests |
-| `firefox` | 66 | `testIgnore: '**/visual/**'` |
-| `webkit` | 66 | `testIgnore: '**/visual/**'` |
-| **Total** | **292** | `fullyParallel`, 2 workers |
+| Project    |   Tests | Notes                          |
+| ---------- | ------: | ------------------------------ |
+| `api`      |      89 | No browser, runs once          |
+| `chromium` |      71 | Includes the 5 `@visual` tests |
+| `firefox`  |      66 | `testIgnore: '**/visual/**'`   |
+| `webkit`   |      66 | `testIgnore: '**/visual/**'`   |
+| **Total**  | **292** | `fullyParallel`, 2 workers     |
 
 ### Project structure
 
@@ -134,19 +137,19 @@ per browser would be pure waste:
 └── playwright.config.ts
 ```
 
-| Directory | Holds | The rule |
-|---|---|---|
-| `tests/` | The 292 specs, split `api/` and `ui/` | **Every assertion lives here** |
-| `pages/` | `BasePage` (nav, search and cart helpers all pages inherit) + one Page Object per route | Locators and actions only — **never an assertion** |
-| `api/` | `BaseAPI` (`url()` + the shared request context) + `AuthAPI`, `ProductAPI`, `OrderAPI`, `UserAPI` | Typed wrappers over Playwright's `APIRequestContext` |
+| Directory   | Holds                                                                                                                                                                                                                       | The rule                                                      |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `tests/`    | The 292 specs, split `api/` and `ui/`                                                                                                                                                                                       | **Every assertion lives here**                                |
+| `pages/`    | `BasePage` (nav, search and cart helpers all pages inherit) + one Page Object per route                                                                                                                                     | Locators and actions only — **never an assertion**            |
+| `api/`      | `BaseAPI` (`url()` + the shared request context) + `AuthAPI`, `ProductAPI`, `OrderAPI`, `UserAPI`                                                                                                                           | Typed wrappers over Playwright's `APIRequestContext`          |
 | `fixtures/` | `base.fixture` (`TEST_ROLE`, worker-scoped contexts, `adminApi`), `auth.fixture` (`customLogin`, `customRegister`, `freshUserContext`), `api.fixture` (`userRequest` / `adminRequest`), `testData` (provisioning + cleanup) | Set up state and hand it to the test; also re-export `expect` |
-| `data/` | `shipping.ts` (free-shipping boundaries and checkout totals as literal expectations), plus `search`, `addresses`, `auth`, `users`, `products`, `types` | Data-driven cases, kept out of the specs |
+| `data/`     | `shipping.ts` (free-shipping boundaries and checkout totals as literal expectations), plus `search`, `addresses`, `auth`, `users`, `products`, `types`                                                                      | Data-driven cases, kept out of the specs                      |
 
 `auth.fixture` and `api.fixture` both `extend` the `test` from `base.fixture`, so `adminApi` is
 defined once and every spec inherits it.
 
-*"Worker-scoped" means the fixture is created once per parallel worker rather than once per test — so
-logging in happens a handful of times for the whole run, not 292 times.*
+_"Worker-scoped" means the fixture is created once per parallel worker rather than once per test — so
+logging in happens a handful of times for the whole run, not 292 times._
 
 ### What a test looks like
 
@@ -156,13 +159,16 @@ from an authenticated session, the other has to run logged out.
 ```ts
 // tests/ui/auth/login.spec.ts
 test.describe('Login Page', { tag: ['@auth'] }, () => {
-
     // customLogin logs in before the body runs, so this starts on a live session
-    customLogin('Login test with valid credentials', { tag: '@smoke' }, async ({ page, loginFixture }) => {
-        await expect(page).toHaveURL('/');
-        await expect(loginFixture.navbar_name).toHaveText('John Doe');
-        await expect(loginFixture.nav_admin).toBeHidden();
-    });
+    customLogin(
+        'Login test with valid credentials',
+        { tag: '@smoke' },
+        async ({ page, loginFixture }) => {
+            await expect(page).toHaveURL('/');
+            await expect(loginFixture.navbar_name).toHaveText('John Doe');
+            await expect(loginFixture.nav_admin).toBeHidden();
+        },
+    );
 
     // the plain `test` from @playwright/test — this case must run logged out
     test('Login test with invalid credentials', async ({ page }) => {
@@ -191,11 +197,11 @@ Four things in there are the whole convention set in miniature:
 
 Two orthogonal axes. **Tier** goes on the test, **area** on the describe.
 
-| Tier | Tests | Command |
-|---|---:|---|
-| `@smoke` | 39 | `npm run test:smoke` |
-| `@smoke` + `@sanity` | 140 | `npm run test:sanity` |
-| Full regression | 292 | `npm test` |
+| Tier                 | Tests | Command               |
+| -------------------- | ----: | --------------------- |
+| `@smoke`             |    39 | `npm run test:smoke`  |
+| `@smoke` + `@sanity` |   140 | `npm run test:sanity` |
+| Full regression      |   292 | `npm test`            |
 
 Areas: `@api`, `@auth`, `@catalog`, `@cart`, `@checkout`, `@orders`, `@profile`, `@admin`, `@visual`.
 
@@ -210,7 +216,7 @@ the prerequisite has already run.
 A handful of app behaviours shape the whole suite. They are worth knowing before changing anything.
 
 **The in-memory database resets whenever the app server restarts.** Seeded accounts and products
-always come back; anything a test creates vanishes on restart and *persists* while the server stays
+always come back; anything a test creates vanishes on restart and _persists_ while the server stays
 up. So no test may depend on data created by an earlier test or an earlier run.
 
 **Auth is a JWT in an httpOnly cookie**, not localStorage. The client restores the session by calling
@@ -218,13 +224,13 @@ up. So no test may depend on data created by an earlier test or an earlier run.
 
 **Seeded accounts** (in `.env.example`, and not secrets):
 
-| Role | Email | Password | `user.name` |
-|---|---|---|---|
+| Role  | Email            | Password   | `user.name`  |
+| ----- | ---------------- | ---------- | ------------ |
 | Admin | `admin@demo.com` | `admin123` | `Admin User` |
-| User | `user@demo.com` | `user123` | `John Doe` |
+| User  | `user@demo.com`  | `user123`  | `John Doe`   |
 
 **Order math — the server is the source of truth.** Tax is 10%; shipping is free only when the
-subtotal is *strictly* greater than \$100 (exactly \$100.00 still pays \$10). The server recomputes
+subtotal is _strictly_ greater than \$100 (exactly \$100.00 still pays \$10). The server recomputes
 totals from the database and decrements stock, so a client cannot override prices.
 
 **Every interactive element has a kebab-case `data-testid`**, so page objects use
@@ -249,12 +255,12 @@ These are the rules that keep the suite readable and repeatable.
 - **Assert persistent state, not transient toasts.** Toasts auto-dismiss, so nav state
   (`nav-username`, `nav-login`) is the primary success signal; toast text is at most secondary.
 - **Registration tests use a unique email per run** (`tiger${Date.now()}@demo.com`) so re-runs
-  without a server restart do not collide. To test the *duplicate*-email path deterministically,
+  without a server restart do not collide. To test the _duplicate_-email path deterministically,
   register against a **seeded** email — a permanent, guaranteed duplicate.
 - **Never place an order against a seeded product.** Ordering decrements `countInStock`, and on a
-  persistent database that stock never comes back (the app only seeds an *empty* collection).
+  persistent database that stock never comes back (the app only seeds an _empty_ collection).
   Provision a disposable product with `createProduct(adminApi)` in the describe's `beforeAll` and
-  remove it in `afterAll`. Reading prices off seeded products is fine; only *ordering* them is not.
+  remove it in `afterAll`. Reading prices off seeded products is fine; only _ordering_ them is not.
 - **Clean up by id — never "delete all".** The suite runs `fullyParallel` with two workers, so a
   blanket delete would destroy data another worker is asserting on. The pattern is a
   `const createdOrders: string[] = []` in the describe, pushed to at creation, and deleted in
@@ -263,15 +269,48 @@ These are the rules that keep the suite readable and repeatable.
 - **A full run leaves the database as it found it:** users 2, products 16, orders 0. That count is
   the check that cleanup is actually working.
 
+## Static analysis
+
+Three gates run before any browser starts: `npm run typecheck`, `npm run lint`, `npm run format:check`.
+All three run in CI in the [`quality` job](#ci).
+
+**Prettier owns formatting; ESLint owns correctness.** They are separate commands on purpose —
+`eslint-plugin-prettier` would route formatting through ESLint, which makes lint slow and reports
+indentation as a lint error. `eslint-config-prettier` sits last in the flat config so ESLint never
+argues about style. Prettier's settings in `prettier.config.mjs` were read off the code that already
+existed (4-space indent, single quotes), so adopting it was one mechanical reformat, not a restyle.
+
+**The rule that justifies the setup is `@typescript-eslint/no-floating-promises`.** A missing `await`
+on a locator action or an API call type-checks clean and then silently never runs — no other gate
+here catches it. It needs type information, which is why the config uses
+`recommendedTypeChecked` with `projectService: true`, and why `tsconfig.json`'s `include` had to grow
+to cover `api/` and `data/` — they were outside it, so `npm run typecheck` had never looked at them.
+
+On top of that, `eslint-plugin-playwright` turns conventions this README documents into things CI
+enforces: `no-focused-test` (a `.only` reaching `main` would quietly shrink the suite to one test),
+`no-wait-for-timeout`, `no-networkidle`, `no-force-option`, `expect-expect`,
+`prefer-web-first-assertions`, `missing-playwright-await`. `customLogin` / `customRegister` are
+registered as `test` aliases in `settings.playwright.globalAliases`, without which the plugin does
+not read their callbacks as test bodies.
+
+Three rule groups are switched **off** deliberately, each with the reason recorded in
+`eslint.config.mjs`:
+
+| Off                                 | Why                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `no-unsafe-*` (5 rules)             | `APIResponse.json()` returns `any`, so every assertion on a response body trips them — 171 of the 215 problems on the first run, one root cause. Typed response models are [#14](https://github.com/pulkitMahour/playwright-enterprise-framework/issues/14); when that lands these start paying for themselves. |
+| `playwright/no-conditional-in-test` | 3 of its 4 hits were `if (!id) throw` guards narrowing the `string \| null` that `getAttribute()` returns — bookkeeping, not branching assertions, and the rule cannot tell them apart.                                                                                                                         |
+| `playwright/prefer-locator`         | It infers "page method" from the identifier prefix, so `HomePage`'s `page_next` / `page_prev` locators are reported as page methods.                                                                                                                                                                            |
+
 ## Reports
 
 Three reporters, each with a job. The config picks them based on environment:
 
-| Where | Reporters |
-|---|---|
-| Local (default) | `html` |
-| Local with `ALLURE=1` | `html` + `allure-playwright` |
-| CI | `github` + `html` + `allure-playwright` |
+| Where                 | Reporters                               |
+| --------------------- | --------------------------------------- |
+| Local (default)       | `html`                                  |
+| Local with `ALLURE=1` | `html` + `allure-playwright`            |
+| CI                    | `github` + `html` + `allure-playwright` |
 
 The `github` reporter turns failures into inline annotations on the commit and pull request, instead
 of a wall of dots in the log.
@@ -283,7 +322,7 @@ npm test
 npm run test:report
 ```
 
-This is the **developer-facing** report — it answers *why did this test fail*, and it embeds traces.
+This is the **developer-facing** report — it answers _why did this test fail_, and it embeds traces.
 In CI it is uploaded as the `playwright-report-full` artifact (4-day retention).
 
 ![Playwright HTML report — 292 passed, tests grouped by spec file with tier and area tags](docs/images/playwright-report.png)
@@ -354,10 +393,11 @@ Two rules for anything captured:
 
 ## CI
 
-`.github/workflows/playwright.yml` — three jobs.
+`.github/workflows/playwright.yml` — four jobs.
 
 ```mermaid
 flowchart TD
+    push(["push"]) --> qual["<b>quality</b><br/>ubuntu-latest, no browser<br/>typecheck → lint → format:check"]
     push(["push"]) --> full["<b>full-suite</b><br/>playwright:v1.62.0-noble<br/>clone TestMart → boot → wait on /api/health<br/>→ 292 tests"]
     full --> pw["playwright-report-full<br/>artifact · 4 days · traces"]
     full --> res["allure-results<br/>artifact · 1 day"]
@@ -368,9 +408,13 @@ flowchart TD
     manual(["workflow_dispatch<br/>or schedule"]) --> smoke["<b>smoke-render</b><br/>@smoke vs the Render deployment"]
 ```
 
+- **quality** runs on every push and takes well under a minute: no container and no browsers, just
+  `npm ci` then the three static gates. It is deliberately **not** a `needs:` of `full-suite` — the
+  two run in parallel and report independently, so a stray semicolon does not cost you the
+  30-minute test signal, and a red suite does not hide a type error.
 - **full-suite** runs on every push, in the Playwright container. It clones TestMart, installs three
   `package.json`s, boots the app, waits on `/api/health`, and runs all 292 tests. The mongod binary
-  cache is restored *after* `npm ci`, because it lives inside `node_modules`.
+  cache is restored _after_ `npm ci`, because it lives inside `node_modules`.
 - **publish-report** runs on plain `ubuntu-latest` rather than the Playwright container, because
   generating an Allure report needs a JVM and that image has none — while the GitHub runner ships a
   JDK. It is gated on `main`, runs with `always()` so a failing run still publishes its report, and
@@ -391,8 +435,6 @@ Two details that cost real debugging time and are worth keeping:
 Tracked as issues rather than hidden:
 [**open backlog**](https://github.com/pulkitMahour/playwright-enterprise-framework/issues) — order
 math duplicated between a page object and an API spec, cleanup helpers that swallow non-2xx
-responses, `typecheck` not yet wired into CI, and a host-only run reporting the 5 container-only
-visual failures. Planned additions: mobile viewports, accessibility checks, API contract tests,
-wider visual coverage, and performance budgets.
-
-There is intentionally no linter or formatter configured; `npm run typecheck` is the only static gate.
+responses, and a host-only run reporting the 5 container-only visual failures. Planned additions:
+mobile viewports, accessibility checks, API contract tests, wider visual coverage, and performance
+budgets.
