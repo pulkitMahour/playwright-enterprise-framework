@@ -1,5 +1,5 @@
 import { BrowserContext } from '@playwright/test';
-import { test as baseTest } from './base.fixture';   // built on base.fixture, so `adminApi` comes along
+import { test as baseTest } from './base.fixture'; // built on base.fixture, so `adminApi` comes along
 import { LoginPage } from '../pages/LoginPage';
 import { RegisterPage } from '../pages/RegisterPage';
 import { credentialsFor, deleteUsersByEmail } from './testData';
@@ -10,10 +10,10 @@ export const customLogin = baseTest.extend<{ loginFixture: LoginPage }>({
         const { email, password } = credentialsFor('user');
 
         await loginPage.gotoLoginPage();
-        await loginPage.login(email, password)
+        await loginPage.login(email, password);
         await use(loginPage);
-    }
-})
+    },
+});
 
 export const customRegister = baseTest.extend<{ registerFixture: RegisterPage }>({
     registerFixture: async ({ page, adminApi }, use) => {
@@ -21,20 +21,20 @@ export const customRegister = baseTest.extend<{ registerFixture: RegisterPage }>
         const email = `tiger${Date.now()}@demo.com`;
 
         await registerPage.gotoRegisterPage();
-        await registerPage.register("Tiger", email, 'user123')
+        await registerPage.register('Tiger', email, 'user123');
         await use(registerPage);
 
         await deleteUsersByEmail(adminApi, [email]);
-    }
-})
+    },
+});
 
 export const test = baseTest.extend<object, { freshUserContext: BrowserContext }>({
     freshUserContext: [
         async ({ browser, adminApi }, use) => {
             const id = Date.now();
-            const name = `tester-${id}`
-            const email = `tester${id}@demo.com`
-            const password = 'user123'
+            const name = `tester-${id}`;
+            const email = `tester${id}@demo.com`;
+            const password = 'user123';
             const context = await browser.newContext();
             const page = await context.newPage();
 

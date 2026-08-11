@@ -16,7 +16,6 @@ export class CheckoutPage extends BasePage {
     readonly payment_note: Locator;
     readonly checkout_error: Locator;
 
-
     constructor(page: Page) {
         super(page);
         this.checkout_form = page.getByTestId('checkout-form');
@@ -42,7 +41,7 @@ export class CheckoutPage extends BasePage {
         return {
             tax: taxNum.toFixed(2),
             shipping: shippingNum.toFixed(2),
-            total: totalNum.toFixed(2)
+            total: totalNum.toFixed(2),
         };
     }
 
@@ -59,4 +58,4 @@ export class CheckoutPage extends BasePage {
         await this.checkout_postalCode.fill(address.postalCode);
         await this.checkout_country.fill(address.country);
     }
-};
+}

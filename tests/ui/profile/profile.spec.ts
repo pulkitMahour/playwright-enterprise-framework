@@ -10,16 +10,16 @@ const existing_profile = {
     city: 'Springfield',
     postalCode: '55555',
     country: 'USA',
-    password: 'user123'
-}
+    password: 'user123',
+};
 
 const updated_profile = {
     fullName: "Elizabeth 'Tester' O'Connor-Smith",
-    street: "12345 N. Boulevard East, Apt 4B 102",
-    city: "Reichstett",
-    postalCode: "67116",
-    country: "France",
-    password: 'newuser123'
+    street: '12345 N. Boulevard East, Apt 4B 102',
+    city: 'Reichstett',
+    postalCode: '67116',
+    country: 'France',
+    password: 'newuser123',
 };
 
 test.describe('Profile Page Existing User', { tag: ['@profile'] }, () => {
@@ -30,13 +30,13 @@ test.describe('Profile Page Existing User', { tag: ['@profile'] }, () => {
         page = await userContext.newPage();
         await page.goto('/');
         await page.waitForURL((url) => !url.pathname.includes('/login'), { timeout: 30_000 });
-    })
+    });
 
     test.beforeEach(async () => {
         profilePage = new ProfilePage(page);
         await profilePage.nav_profile.click();
-        await expect(page).toHaveURL('/profile')
-    })
+        await expect(page).toHaveURL('/profile');
+    });
 
     test('Verify prefilled profile form', { tag: '@smoke' }, async () => {
         await expect(profilePage.profile_form).toBeVisible();
@@ -46,14 +46,14 @@ test.describe('Profile Page Existing User', { tag: ['@profile'] }, () => {
         await expect(profilePage.profile_city).toHaveValue(existing_profile.city);
         await expect(profilePage.profile_postalCode).toHaveValue(existing_profile.postalCode);
         await expect(profilePage.profile_country).toHaveValue(existing_profile.country);
-    })
-})
+    });
+});
 
 newRegister.describe('Profile Page New User', { tag: ['@sanity', '@profile'] }, () => {
-    newRegister.describe.configure({ mode: 'serial' })
+    newRegister.describe.configure({ mode: 'serial' });
     let page: Page;
     let profilePage: ProfilePage;
-    let email: string
+    let email: string;
 
     newRegister.beforeAll(async ({ freshUserContext }) => {
         page = await freshUserContext.newPage();
@@ -64,9 +64,9 @@ newRegister.describe('Profile Page New User', { tag: ['@sanity', '@profile'] }, 
     newRegister.beforeEach(async () => {
         profilePage = new ProfilePage(page);
         await profilePage.nav_profile.click();
-        await expect(page).toHaveURL('/profile')
+        await expect(page).toHaveURL('/profile');
         email = await profilePage.profile_email.inputValue();
-    })
+    });
 
     newRegister('Update name and address', async () => {
         await expect(profilePage.profile_email).toBeDisabled();
@@ -79,16 +79,18 @@ newRegister.describe('Profile Page New User', { tag: ['@sanity', '@profile'] }, 
         await expect(profilePage.profile_city).toHaveValue(updated_profile.city);
         await expect(profilePage.profile_postalCode).toHaveValue(updated_profile.postalCode);
         await expect(profilePage.profile_country).toHaveValue(updated_profile.country);
-    })
+    });
 
     newRegister('Invalid input', async () => {
         await profilePage.profile_name.fill('A');
         await profilePage.profile_save.click();
         await expect(profilePage.profile_error).toBeVisible();
-        await expect(profilePage.profile_error).toHaveText('name must be longer than or equal to 2 characters')
+        await expect(profilePage.profile_error).toHaveText(
+            'name must be longer than or equal to 2 characters',
+        );
         await page.reload();
         await expect(profilePage.profile_name).toHaveValue(updated_profile.fullName);
-    })
+    });
 
     newRegister('Update Password and re-login with old password', async () => {
         await profilePage.profile_password.fill(updated_profile.password);
@@ -108,9 +110,9 @@ newRegister.describe('Profile Page New User', { tag: ['@sanity', '@profile'] }, 
 
         //login with updated password. should be logged it.
         await login.login(email, updated_profile.password);
-        await expect(login.navbar_name).toHaveText(updated_profile.fullName)
-    })
-})
+        await expect(login.navbar_name).toHaveText(updated_profile.fullName);
+    });
+});
 
 test.describe('Profile Page - Update Error Handling', { tag: ['@profile'] }, () => {
     let page: Page;
@@ -132,13 +134,16 @@ test.describe('Profile Page - Update Error Handling', { tag: ['@profile'] }, () 
     });
 
     test('Should display profile-error fallback message when PUT /api/users/me returns 500 with empty body', async () => {
-        await page.route((url) => url.pathname === '/api/users/me', async (route) => {
-            await route.fulfill({
-                status: 500,
-                contentType: 'application/json',
-                body: JSON.stringify({}),
-            });
-        });
+        await page.route(
+            (url) => url.pathname === '/api/users/me',
+            async (route) => {
+                await route.fulfill({
+                    status: 500,
+                    contentType: 'application/json',
+                    body: JSON.stringify({}),
+                });
+            },
+        );
 
         await profilePage.profile_name.fill('Network Failure Test');
         await profilePage.profile_save.click();

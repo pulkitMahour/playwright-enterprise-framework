@@ -7,49 +7,49 @@ dotenv.config({ path: path.resolve(__dirname, '.env'), quiet: true });
 delete process.env.GIO_MODULE_DIR;
 
 export default defineConfig({
-  expect: {
-    toHaveScreenshot: {
-      maxDiffPixelRatio: 0.002,
-      animations: 'disabled',
-      caret: 'hide',
+    expect: {
+        toHaveScreenshot: {
+            maxDiffPixelRatio: 0.002,
+            animations: 'disabled',
+            caret: 'hide',
+        },
     },
-  },
-  testDir: './tests',
-  fullyParallel: true,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
-  workers: 2,
-  reporter: process.env.CI
-   ? [['github'], ['html'], ['allure-playwright']]
-    : process.env.ALLURE
-     ? [['html'], ['allure-playwright']]
-      : [['html']],
-  use: {
-    baseURL: process.env.BASE_URL ?? 'http://localhost:5173',
-    trace: 'retain-on-failure',
-  },
+    testDir: './tests',
+    fullyParallel: true,
+    forbidOnly: !!process.env.CI,
+    retries: process.env.CI ? 2 : 0,
+    workers: 2,
+    reporter: process.env.CI
+        ? [['github'], ['html'], ['allure-playwright']]
+        : process.env.ALLURE
+          ? [['html'], ['allure-playwright']]
+          : [['html']],
+    use: {
+        baseURL: process.env.BASE_URL ?? 'http://localhost:5173',
+        trace: 'retain-on-failure',
+    },
 
-  projects: [
-    {
-      name: 'api',
-      testDir: './tests/api',
-    },
-    {
-      name: 'chromium',
-      testDir: './tests/ui',
-      use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      testDir: './tests/ui',
-      use: { ...devices['Desktop Firefox'] },
-      testIgnore: '**/visual/**',
-    },
-    {
-      name: 'webkit',
-      testDir: './tests/ui',
-      use: { ...devices['Desktop Safari'] },
-      testIgnore: '**/visual/**',
-    },
-  ],
+    projects: [
+        {
+            name: 'api',
+            testDir: './tests/api',
+        },
+        {
+            name: 'chromium',
+            testDir: './tests/ui',
+            use: { ...devices['Desktop Chrome'] },
+        },
+        {
+            name: 'firefox',
+            testDir: './tests/ui',
+            use: { ...devices['Desktop Firefox'] },
+            testIgnore: '**/visual/**',
+        },
+        {
+            name: 'webkit',
+            testDir: './tests/ui',
+            use: { ...devices['Desktop Safari'] },
+            testIgnore: '**/visual/**',
+        },
+    ],
 });

@@ -14,7 +14,7 @@ export function credentialsFor(role: TestRole) {
 
     if (!email || !password) {
         throw new Error(
-            `Missing ${prefix}_EMAIL / ${prefix}_PASSWORD. Copy .env.example to .env and fill them in.`
+            `Missing ${prefix}_EMAIL / ${prefix}_PASSWORD. Copy .env.example to .env and fill them in.`,
         );
     }
     return { email, password };
@@ -29,7 +29,7 @@ export async function loginViaApi(baseURL: string, role: TestRole): Promise<APIR
         const response = await context.post('/api/auth/login', { data: { email, password } });
         if (!response.ok()) {
             throw new Error(
-                `Login failed for ${email} (HTTP ${response.status()}). Is TestMart running at ${baseURL}?`
+                `Login failed for ${email} (HTTP ${response.status()}). Is TestMart running at ${baseURL}?`,
             );
         }
     } catch (error) {
@@ -47,7 +47,9 @@ export async function loginAsAdmin(workerInfo: WorkerInfo): Promise<APIRequestCo
     return loginViaApi(baseURL, 'admin');
 }
 
-export async function adminApiFixture({ }: object, use: (api: APIRequestContext) => Promise<void>,
+export async function adminApiFixture(
+    {}: object,
+    use: (api: APIRequestContext) => Promise<void>,
     workerInfo: WorkerInfo,
 ): Promise<void> {
     const api = await loginAsAdmin(workerInfo);
@@ -81,7 +83,10 @@ function uniqueName(): string {
 }
 
 // Creates a throwaway product to order against, instead of draining a seeded one.
-export async function createProduct(api: APIRequestContext, overrides: ProductOverrides = {},): Promise<TestProduct> {
+export async function createProduct(
+    api: APIRequestContext,
+    overrides: ProductOverrides = {},
+): Promise<TestProduct> {
     const response = await new ProductAPI(api).create({
         name: uniqueName(),
         description: 'Disposable product created by the test suite',
@@ -93,7 +98,7 @@ export async function createProduct(api: APIRequestContext, overrides: ProductOv
 
     if (response.status() !== 201) {
         throw new Error(
-            `Could not create a test product (HTTP ${response.status()}): ${await response.text()}`
+            `Could not create a test product (HTTP ${response.status()}): ${await response.text()}`,
         );
     }
     return response.json();
@@ -144,10 +149,10 @@ export async function deleteUsersByEmail(
 
     const users: Array<{ id: string; email: string }> = await response.json();
     for (const user of users) {
-        if (emails.includes(user.email)){
+        if (emails.includes(user.email)) {
             await deleteUsers(api, [user.id]);
-        };
+        }
     }
 }
 
-function ignoreCleanupError(): void { }
+function ignoreCleanupError(): void {}

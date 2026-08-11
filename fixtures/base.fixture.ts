@@ -12,7 +12,7 @@ function resolveRole(): TestRole {
     const raw = (process.env.TEST_ROLE ?? 'user').trim().toLowerCase();
     if (!ROLES.includes(raw as TestRole)) {
         throw new Error(
-            `TEST_ROLE must be one of ${ROLES.join(' | ')} — got "${process.env.TEST_ROLE}".`
+            `TEST_ROLE must be one of ${ROLES.join(' | ')} — got "${process.env.TEST_ROLE}".`,
         );
     }
     return raw as TestRole;
@@ -40,12 +40,15 @@ function contextForRole(role: TestRole) {
     };
 }
 
-export const test = base.extend<object, {
-    authenticatedContext: BrowserContext;
-    adminContext: BrowserContext;
-    userContext: BrowserContext;
-    adminApi: APIRequestContext;
-}>({
+export const test = base.extend<
+    object,
+    {
+        authenticatedContext: BrowserContext;
+        adminContext: BrowserContext;
+        userContext: BrowserContext;
+        adminApi: APIRequestContext;
+    }
+>({
     authenticatedContext: [contextForRole(testRole), { scope: 'worker' }],
 
     adminContext: [contextForRole('admin'), { scope: 'worker' }],
@@ -54,7 +57,6 @@ export const test = base.extend<object, {
 
     adminApi: [adminApiFixture, { scope: 'worker' }],
 });
-
 
 // export const test = base.extend<{}, { workerStorageState: string }>({
 //     storageState: ({ workerStorageState }, use) => use(workerStorageState),

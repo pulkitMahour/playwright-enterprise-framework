@@ -4,20 +4,23 @@ import { customLogin } from '../../../fixtures/auth.fixture';
 import { CheckoutPage } from '../../../pages/CheckoutPage';
 
 test.describe('Login Page', { tag: ['@auth'] }, () => {
-    customLogin('Login test with valid credentials', { tag: '@smoke' }, async ({ page, loginFixture }) => {
-
-        await expect(page).toHaveURL('/');
-        await expect(loginFixture.loginSuccess).toBeVisible();
-        await expect(loginFixture.navbar_name).toHaveText('John Doe')
-        await expect(loginFixture.nav_admin).toBeHidden();
-    });
+    customLogin(
+        'Login test with valid credentials',
+        { tag: '@smoke' },
+        async ({ page, loginFixture }) => {
+            await expect(page).toHaveURL('/');
+            await expect(loginFixture.loginSuccess).toBeVisible();
+            await expect(loginFixture.navbar_name).toHaveText('John Doe');
+            await expect(loginFixture.nav_admin).toBeHidden();
+        },
+    );
 
     test('Login test with invalid credentials', async ({ page }) => {
         const loginPage = new LoginPage(page);
         await loginPage.gotoLoginPage();
-        await loginPage.login("invalid@demo.com", "invalid123")
+        await loginPage.login('invalid@demo.com', 'invalid123');
 
-        await expect(loginPage.loginError).toHaveText('Invalid email or password')
+        await expect(loginPage.loginError).toHaveText('Invalid email or password');
         await expect(page).toHaveURL('/login');
     });
 
@@ -28,7 +31,7 @@ test.describe('Login Page', { tag: ['@auth'] }, () => {
         await expect(loginFixture.logoutSuccess).toBeVisible();
         await expect(loginFixture.loginStatusButton).toBeVisible();
         await expect(loginFixture.navbar_name).toBeHidden();
-    })
+    });
 
     test('not an email', async ({ page }) => {
         const loginPage = new LoginPage(page);
@@ -63,18 +66,18 @@ test.describe('Login Page', { tag: ['@auth'] }, () => {
 
         await loginPage.login('admin@demo.com', 'admin123');
         await expect(loginPage.loginSuccess).toBeVisible();
-        await expect(loginPage.navbar_name).toHaveText('Admin User')
+        await expect(loginPage.navbar_name).toHaveText('Admin User');
         await expect(loginPage.nav_admin).toBeVisible();
     });
 
     test('go to checkout without login', async ({ page }) => {
         const loginPage = new LoginPage(page);
-        const checkoutPage = new CheckoutPage(page)
+        const checkoutPage = new CheckoutPage(page);
 
         await checkoutPage.goto('/');
         await checkoutPage.addToCart('Raptor Gaming Mouse');
         await checkoutPage.goToCart();
-        await checkoutPage.cart_checkout.click()
+        await checkoutPage.cart_checkout.click();
         await expect(page).toHaveURL('/login');
 
         await loginPage.login('user@demo.com', 'user123');

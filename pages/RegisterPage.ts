@@ -1,5 +1,5 @@
-import { Page, Locator } from "@playwright/test";
-import { BasePage } from "./BasePage";
+import { Page, Locator } from '@playwright/test';
+import { BasePage } from './BasePage';
 
 export class RegisterPage extends BasePage {
     readonly name: Locator;
@@ -10,21 +10,21 @@ export class RegisterPage extends BasePage {
 
     constructor(page: Page) {
         super(page);
-        this.name = page.getByTestId("register-name");
-        this.email = page.getByTestId("register-email");
-        this.password = page.getByTestId("register-password");
-        this.registerButton = page.getByTestId("register-submit");
+        this.name = page.getByTestId('register-name');
+        this.email = page.getByTestId('register-email');
+        this.password = page.getByTestId('register-password');
+        this.registerButton = page.getByTestId('register-submit');
         this.registerError = page.getByTestId('register-error');
     }
 
     async gotoRegisterPage() {
-        await this.goto('/register')
+        await this.goto('/register');
     }
 
     async register(user: string, email: string, password: string) {
         await this.name.fill(user);
         await this.email.fill(email);
-        await this.password.fill(password)
+        await this.password.fill(password);
         await this.registerButton.click();
     }
 }
